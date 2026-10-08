@@ -1,8 +1,9 @@
 package com.aprendia.backend.config;
 
+import com.aprendia.backend.common.response.ApiResponseWriter;
 import com.aprendia.backend.feature.auth.utils.JwtAuthenticationFilter;
 import com.aprendia.backend.security.filter.ApiKeyFilter;
-import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -36,6 +37,9 @@ public class SecurityConfig {
     @Autowired
     private com.aprendia.backend.security.filter.ApiKeyFilter apiKeyFilter;
 
+    @Autowired
+    private ApiResponseWriter apiResponseWriter;
+
     @Value("${app.security.cors.allowed-origins:http://localhost:3000,http://localhost:5173,http://localhost:8080,http://localhost:4200,https://45.85.249.128,http://45.85.249.128}")
     private String allowedOrigins;
 
@@ -56,13 +60,14 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
 
-                // Manejo de excepciones de entrada no autorizada
+                // 401 (sin token / token inválido) y 403 (sin rol suficiente) con el envelope estándar
                 .exceptionHandling(handling -> handling
-                        .authenticationEntryPoint((request, response, authException) -> {
-                            response.setContentType("application/json;charset=UTF-8");
-                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                            response.getWriter().write("{\"error\": \"Unauthorized\", \"message\": \"No autorizado para acceder a este recurso.\"}");
-                        })
+                        .authenticationEntryPoint((request, response, authException) ->
+                                apiResponseWriter.writeError(response, HttpStatus.UNAUTHORIZED,
+                                        "No autorizado para acceder a este recurso. Inicie sesión."))
+                        .accessDeniedHandler((request, response, accessDeniedException) ->
+                                apiResponseWriter.writeError(response, HttpStatus.FORBIDDEN,
+                                        "No tiene permisos para acceder a este recurso."))
                 )
 
                 // Sesiones sin estado

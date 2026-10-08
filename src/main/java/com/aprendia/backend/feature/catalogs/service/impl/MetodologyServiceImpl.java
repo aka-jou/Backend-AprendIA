@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.stream.Collectors;
 
 @Service
 public class MetodologyServiceImpl implements MetodologyService {
@@ -41,13 +40,7 @@ public class MetodologyServiceImpl implements MetodologyService {
     @Transactional(readOnly = true)
     public PagedResponse<MetodologyResponseDTO> getAllMetodologies(Pageable pageable) {
         Page<Metodology> metodologiesPage = metodologyRepository.findAll(pageable);
-        return PagedResponse.<MetodologyResponseDTO>builder()
-                .content(metodologiesPage.getContent().stream().map(this::mapToResponse).collect(Collectors.toList()))
-                .pageable(new PagedResponse.PageableInfo(metodologiesPage.getNumber(), metodologiesPage.getSize()))
-                .totalElements(metodologiesPage.getTotalElements())
-                .totalPages(metodologiesPage.getTotalPages())
-                .last(metodologiesPage.isLast())
-                .build();
+        return PagedResponse.fromPage(metodologiesPage.map(this::mapToResponse));
     }
 
     @Override

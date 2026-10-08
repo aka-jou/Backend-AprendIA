@@ -1,5 +1,6 @@
 package com.aprendia.backend.security.filter;
 
+import com.aprendia.backend.common.response.ApiResponseWriter;
 import com.aprendia.backend.security.repository.ApiKeyRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -19,6 +20,9 @@ public class ApiKeyFilter extends OncePerRequestFilter {
 
     @Autowired
     private ApiKeyRepository apiKeyRepository;
+
+    @Autowired
+    private ApiResponseWriter apiResponseWriter;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -47,7 +51,7 @@ public class ApiKeyFilter extends OncePerRequestFilter {
         String requestApiKey = request.getHeader(API_KEY_HEADER);
 
         if (requestApiKey == null || requestApiKey.isBlank()) {
-            response.sendError(HttpStatus.UNAUTHORIZED.value(), "Missing API Key");
+            apiResponseWriter.writeError(response, HttpStatus.UNAUTHORIZED, "Falta la cabecera X-API-KEY.");
             return;
         }
 
@@ -56,7 +60,7 @@ public class ApiKeyFilter extends OncePerRequestFilter {
                 .orElse(false);
 
         if (!isValid) {
-            response.sendError(HttpStatus.UNAUTHORIZED.value(), "Invalid or Deprecated API Key");
+            apiResponseWriter.writeError(response, HttpStatus.UNAUTHORIZED, "La API Key es inválida o está obsoleta.");
             return;
         }
 
