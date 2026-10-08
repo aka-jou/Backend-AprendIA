@@ -1,0 +1,66 @@
+services:
+  # Base de Datos PostgreSQL con soporte de PgVector
+  db-aprend-ia:
+    container_name: aprendia_db
+    image: pgvector/pgvector:pg16
+    restart: always
+    ports:
+      - "${DB_PORT_EXT:-5432}:5432"
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:-aprendia_app}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-Apr3nd1A_DB_!S3cur3Pa$$2026}
+      POSTGRES_DB: ${DB_NAME:-aprendiadb}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-aprendia_app} -d ${DB_NAME:-aprendiadb}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - aprendia_network
+
+  # Servicio de API Backend Spring Boot
+  aprendia-api:
+    container_name: aprendia_api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    environment:
+      # Configuración de base de datos
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db-aprend-ia:5432/${DB_NAME:-aprendiadb}
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME:-aprendia_app}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-Apr3nd1A_DB_!S3cur3Pa$$2026}
+      
+      # Inyectar perfiles activos (usamos prod por defecto para contenedores, o dev)
+      SPRING_PROFILES_ACTIVE: prod
+
+      # Variables de seguridad y JWT
+      JWT_SECRET: ${JWT_SECRET:-aprendia_super_secret_jwt_key_2026_secure_algorithm_for_signatures}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      ENCRYPTION_SECRET: ${ENCRYPTION_SECRET:-aprendia_encryption_secret_key_2026}
+      
+      # CORS
+      APP_SECURITY_CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:5173,http://localhost:8080}
+
+      # Logs
+      LOGGING_LEVEL_COM_APRENDIA_BACKEND: ${LOGGING_LEVEL_APP:-INFO}
+      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY: ${LOGGING_LEVEL_SECURITY:-INFO}
+      LOGGING_LEVEL_ORG_HIBERNATE_SQL: ${LOGGING_LEVEL_SQL:-WARN}
+    depends_on:
+      db-aprend-ia:
+        condition: service_healthy
+    networks:
+      - aprendia_network
+
+volumes:
+  db_data:
+    name: aprendia_db_data
+
+networks:
+  aprendia_network:
+    name: aprendia_network
+    driver: bridge

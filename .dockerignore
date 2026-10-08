@@ -1,0 +1,32 @@
+# Directorios de compilación
+target/
+build/
+bin/
+
+# Archivos de entorno y secretos
+.env
+.env.*
+.env.local
+
+# Control de versiones
+.git
+.gitignore
+
+# Archivos de configuración de IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Logs
+logs/
+*.log
+
+# Scripts locales
+mvnw
+mvnw.cmd
+.mvn/
+README.md
+Dockerfile
+docker-compose.yml

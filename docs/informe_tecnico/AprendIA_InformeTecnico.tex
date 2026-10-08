@@ -1,0 +1,141 @@
+\documentclass[12pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{geometry}
+\geometry{a4paper, margin=2.5cm}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{titlesec}
+\usepackage{float}
+\usepackage{tocbibind}
+\usepackage{tabularx}
+\usepackage{setspace}
+
+\title{
+    \vspace{2cm}
+    \Huge \textbf{Informe Técnico del Proyecto} \\
+    \vspace{1cm}
+    \LARGE \textbf{AprendIA} \\
+    \vspace{0.5cm}
+    \large Aplicación integral para la gestión y seguimiento del aprendizaje \\
+    \vspace{2cm}
+}
+\author{Equipo de Desarrollo}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+\newpage
+
+\begin{abstract}
+El presente informe técnico detalla el desarrollo e implementación de AprendIA, un sistema integral de gestión educativa y administrativa. El proyecto busca facilitar el seguimiento del aprendizaje mediante herramientas tecnológicas modernas, combinando una arquitectura robusta en el backend utilizando Spring Boot y PostgreSQL, y clientes diseñados para una interacción fluida. A lo largo del documento se abordan las metodologías utilizadas, la justificación tecnológica, la arquitectura orientada a microservicios y las estrategias de despliegue y pruebas.
+\end{abstract}
+
+\renewcommand{\abstractname}{Abstract}
+\begin{abstract}
+\textit{This technical report details the development and implementation of AprendIA, a comprehensive educational and administrative management system. The project seeks to facilitate learning tracking through modern technological tools, combining a robust backend architecture using Spring Boot and PostgreSQL, and clients designed for fluid interaction. Throughout the document, the methodologies used, the technological justification, the microservices-oriented architecture, and the deployment and testing strategies are discussed.}
+\end{abstract}
+
+\newpage
+\tableofcontents
+\newpage
+\listoftables
+\newpage
+\listoffigures
+\newpage
+
+\section{Introducción}
+
+\subsection{Antecedentes}
+El proceso de enseñanza y el seguimiento de los alumnos requiere de herramientas que centralicen la información. Actualmente, existen diversas soluciones, pero muchas carecen de integración adecuada entre la parte administrativa (gestión de roles, perfiles, catálogos) y la interacción directa del estudiante (inicios de sesión ágiles mediante códigos QR). AprendIA nace como respuesta a esta necesidad de unificación.
+
+\subsection{Planteamiento del problema}
+% SUGERENCIA PARA EL ALUMNO: Redacta este párrafo con tus propias palabras para evitar penalización por IA.
+La gestión de información de estudiantes, educadores e instituciones suele estar fragmentada. Los administradores enfrentan dificultades para mantener catálogos actualizados (municipios, estados, perfiles) de forma centralizada y segura. A su vez, los estudiantes requieren un método de acceso rápido y seguro que evite la fricción de contraseñas complejas.
+
+\subsection{Justificación}
+% SUGERENCIA PARA EL ALUMNO: Personaliza este punto.
+Implementar AprendIA permite optimizar procesos administrativos y mejorar la experiencia de usuario. El uso de tecnologías modernas asegura escalabilidad, mientras que los protocolos de seguridad implementados (JWT, contraseñas encriptadas, validaciones proactivas) protegen la integridad de los datos.
+
+\subsection{Objetivo general}
+Desarrollar e implementar un sistema de software integral (AprendIA) para la gestión educativa, que permita el control de perfiles, autenticación segura y seguimiento eficiente mediante una arquitectura escalable.
+
+\subsection{Objetivos específicos}
+\begin{itemize}
+    \item Diseñar e implementar una API REST utilizando Spring Boot y PostgreSQL.
+    \item Incorporar un sistema de autenticación dual: mediante credenciales estándar y códigos QR para estudiantes.
+    \item Desarrollar y asegurar catálogos dinámicos (Estados, Municipios, Roles, Dependencias).
+    \item Establecer flujos de despliegue continuo mediante contenedores Docker.
+\end{itemize}
+
+\subsection{Alcances y limitaciones}
+\textbf{Alcances:} El sistema gestionará la creación, lectura, actualización y eliminación de usuarios (administradores y estudiantes) y mantendrá la persistencia de datos relacionados con direcciones y perfiles. \\
+\textbf{Limitaciones:} En su fase inicial, la plataforma dependerá de conexión a internet constante, sin soporte para modo offline, y la carga inicial de catálogos será administrada manualmente.
+
+\subsection{Presupuesto del proyecto}
+% SUGERENCIA PARA EL ALUMNO: Agrega una tabla de costos estimada (servidores, horas de desarrollo, licencias si aplican).
+El presupuesto contempla los costos de infraestructura en la nube (servidores VPS, bases de datos gestionadas) y las horas hombre dedicadas al análisis, desarrollo y pruebas. \textit{(Nota: Completar con cifras reales del equipo)}.
+
+\subsection{Marketing y análisis de mercado}
+\subsubsection{Identificación del segmento del mercado}
+Los usuarios finales son instituciones educativas, administradores académicos, educadores y estudiantes. Los clientes potenciales son escuelas o centros de formación que requieran digitalizar y agilizar sus procesos internos.
+
+\subsubsection{Modelo de Negocio}
+El modelo de ingresos propuesto es un sistema SaaS (Software as a Service) por suscripción mensual o anual basada en el volumen de estudiantes matriculados en la institución.
+
+\section{Marco referencial}
+
+\subsection{Marco teórico}
+El proyecto se fundamenta teóricamente en la arquitectura de software basada en API REST y el patrón MVC (Modelo-Vista-Controlador). Además, se apoya en conceptos de seguridad de la información (OWASP) y en el manejo de tokens de acceso (JWT).
+
+\subsection{Marco contextual}
+% SUGERENCIA PARA EL ALUMNO: Especificar el estado/país y el entorno en el que se visualiza implementar.
+El desarrollo de AprendIA se contextualiza en el entorno educativo actual, donde la digitalización acelerada ha forzado a las instituciones a adoptar herramientas tecnológicas para la gestión escolar en modalidades híbridas o presenciales.
+
+\subsection{Contexto tecnológico}
+Se evaluaron tecnologías como Node.js y Django, pero se seleccionó \textbf{Java con Spring Boot} por su robustez, tipado estático, amplia comunidad y ecosistema maduro para integraciones empresariales. Para la base de datos, se optó por \textbf{PostgreSQL} frente a MySQL debido a su excelente rendimiento y estricto cumplimiento del estándar SQL.
+
+\section{Metodología y desarrollo del proyecto}
+
+\subsection{Análisis}
+El análisis de la lógica de negocio se centró en la separación de responsabilidades (Service, Repository, Controller). Se identificaron épicas clave como: "Gestión de Autenticación", "Gestión de Catálogos" y "Gestión de Usuarios".
+% SUGERENCIA PARA EL ALUMNO: Redacta al menos dos Historias de Usuario (Ej: Como administrador quiero crear un estudiante para...).
+
+\subsection{Diseño}
+Se documenta una arquitectura monolítica modular orientada a servicios (con miras a microservicios). Se implementaron patrones como \textbf{Data Transfer Object (DTO)}, \textbf{Repository}, \textbf{Builder} y \textbf{Mapper}.
+\vspace{0.5cm}
+% SUGERENCIA: Insertar imagen del diagrama
+\begin{figure}[H]
+    \centering
+    \textit{[Insertar Diagrama de Arquitectura aquí]}
+    \caption{Arquitectura General del Sistema}
+\end{figure}
+
+\subsection{Implementación}
+La estrategia arquitectónica consistió en desarrollar capas independientes. Se configuró Spring Security con JWT para la autorización. Se aplicó validación proactiva en el \textit{backend} (ej. verificación de unicidad de CURP y Correo) antes de interactuar con la persistencia.
+
+\subsection{Tecnologías implementadas para Minería de Datos}
+\textit{(Nota: Si su proyecto no incluye Machine Learning ni PLN, deben justificarlo aquí o explicar la visión a futuro. Si sí lo incluye, completar según las preguntas de la rúbrica).}
+% SUGERENCIA PARA EL ALUMNO: Si no aplica, mencionar: "En la fase actual del proyecto no se han integrado modelos de Machine Learning ni PLN, sin embargo, la base de datos está estructurada para permitir futuras implementaciones de análisis predictivo sobre el rendimiento de los alumnos".
+
+\subsection{Pruebas}
+Se implementaron estrategias de testing enfocadas en la validación de peticiones (HttpStatus 422, 400 y 404). A nivel de seguridad, se realizaron pruebas de integridad de datos para asegurar que registros inexistentes o duplicados fueran capturados por el \textit{GlobalExceptionHandler}.
+
+\subsection{Despliegue}
+El backend se encuentra dockerizado (\texttt{Dockerfile} y \texttt{docker-compose.yml}). El despliegue se orquesta sobre un servidor virtual (VPS) corriendo en un sistema basado en contenedores, automatizado mediante un script de limpieza y redespliegue.
+
+\section{Resultados}
+
+Los procesos de negocio (registro de estudiantes, inicio de sesión por QR, validación de catálogos) se han implementado con éxito.
+% SUGERENCIA PARA EL ALUMNO: Incluye screenshots del Postman/Swagger o de la App funcionando y describe la gestión del proyecto (Jira, Trello, etc.).
+
+\section{Conclusiones}
+El proyecto logró cumplir con los objetivos trazados al entregar una API segura, robusta y con excelente control de excepciones.
+% SUGERENCIA PARA EL ALUMNO: Redacta tus principales aspectos aprendidos y el desarrollo de habilidades como Ingeniero en Software. ¡Usa tus palabras!
+
+\section{Anexos}
+% SUGERENCIA PARA EL ALUMNO: Anexar diseños de encuestas, cronogramas de actividades y Diagramas UML (Casos de uso, Clases, Secuencia).
+
+\end{document}

@@ -1,0 +1,1142 @@
+\documentclass[11pt,a4paper]{article}
+
+% ============================================================
+% Paquetes
+% ============================================================
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-noindentfirst]{babel}
+\usepackage{geometry}
+\geometry{a4paper, margin=2.5cm}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{caption}
+\usepackage{amssymb}
+\usepackage{ragged2e}
+\usepackage{seqsplit}
+
+% ============================================================
+% Colores (estados del checklist)
+% ============================================================
+\definecolor{cumpleColor}{RGB}{0,128,0}
+\definecolor{parcialColor}{RGB}{184,134,11}
+\definecolor{noaplicaColor}{RGB}{110,110,110}
+\definecolor{fueraColor}{RGB}{31,90,160}
+\definecolor{nocumpleColor}{RGB}{178,34,34}
+\definecolor{codebg}{RGB}{245,245,245}
+\definecolor{coderule}{RGB}{180,180,180}
+\definecolor{linknavy}{RGB}{20,60,120}
+\definecolor{headergray}{RGB}{90,90,90}
+
+\newcommand{\Cumple}{\textcolor{cumpleColor}{\textbf{Cumple}}}
+\newcommand{\Parcial}{\textcolor{parcialColor}{\textbf{Parcial}}}
+\newcommand{\NoAplica}{\textcolor{noaplicaColor}{No aplica}}
+\newcommand{\Fuera}{\textcolor{fueraColor}{Fuera de alcance}}
+\newcommand{\NoCumple}{\textcolor{nocumpleColor}{\textbf{No cumple}}}
+
+% ============================================================
+% hyperref
+% ============================================================
+\hypersetup{
+    colorlinks=true,
+    linkcolor=linknavy,
+    citecolor=linknavy,
+    urlcolor=linknavy,
+    pdftitle={Validacion de Seguridad de Entradas de Datos - AprendIA},
+    pdfauthor={Equipo AprendIA}
+}
+
+% ============================================================
+% Encabezado / pie de pagina
+% ============================================================
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\lfoot{\footnotesize\textcolor{headergray}{Seguridad de la Información \textbullet\ Equipo AprendIA}}
+\rfoot{\footnotesize\textcolor{headergray}{\thepage}}
+
+% ============================================================
+% listings: estilos de código
+% ============================================================
+\renewcommand{\lstlistingname}{Listado}
+\captionsetup[lstlisting]{font=small,labelfont=bf}
+
+\lstdefinestyle{javastyle}{
+    language=Java,
+    backgroundcolor=\color{codebg},
+    basicstyle=\ttfamily\scriptsize,
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    numbersep=8pt,
+    frame=single,
+    framerule=0.3pt,
+    rulecolor=\color{coderule},
+    breaklines=true,
+    breakatwhitespace=false,
+    keywordstyle=\color{blue!55!black}\bfseries,
+    commentstyle=\color{green!35!black}\itshape,
+    stringstyle=\color{red!55!black},
+    showstringspaces=false,
+    tabsize=2,
+    xleftmargin=1em,
+    xrightmargin=1em
+}
+
+\lstdefinestyle{dartstyle}{
+    backgroundcolor=\color{codebg},
+    basicstyle=\ttfamily\scriptsize,
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    numbersep=8pt,
+    frame=single,
+    framerule=0.3pt,
+    rulecolor=\color{coderule},
+    breaklines=true,
+    breakatwhitespace=false,
+    showstringspaces=false,
+    tabsize=2,
+    xleftmargin=1em,
+    xrightmargin=1em
+}
+
+\lstdefinestyle{plainstyle}{
+    backgroundcolor=\color{codebg},
+    basicstyle=\ttfamily\scriptsize,
+    frame=single,
+    framerule=0.3pt,
+    rulecolor=\color{coderule},
+    breaklines=true,
+    breakatwhitespace=false,
+    showstringspaces=false,
+    tabsize=2,
+    xleftmargin=1em,
+    xrightmargin=1em
+}
+
+\lstdefinestyle{xmlstyle}{
+    language=XML,
+    backgroundcolor=\color{codebg},
+    basicstyle=\ttfamily\scriptsize,
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    numbersep=8pt,
+    frame=single,
+    framerule=0.3pt,
+    rulecolor=\color{coderule},
+    breaklines=true,
+    breakatwhitespace=false,
+    keywordstyle=\color{blue!55!black}\bfseries,
+    commentstyle=\color{green!35!black}\itshape,
+    stringstyle=\color{red!55!black},
+    showstringspaces=false,
+    xleftmargin=1em,
+    xrightmargin=1em
+}
+
+\lstset{style=plainstyle}
+
+% Placeholder para capturas de pantalla que residen en otro repositorio
+\newcommand{\screenshotplaceholder}[3]{%
+\begin{center}
+\fbox{\parbox[c][#2][c]{#1}{\centering\footnotesize\itshape #3}}
+\end{center}
+}
+
+\renewcommand{\contentsname}{Índice}
+
+% ============================================================
+\begin{document}
+\shorthandoff{"}
+
+% ============================================================
+% Portada
+% ============================================================
+\begin{titlepage}
+\centering
+\vspace*{2cm}
+{\Huge\bfseries Universidad Politecnica de Chiapas\par}
+\vspace{0.4cm}
+{\Large Ingenieria en Software\par}
+\vspace{2cm}
+
+\noindent\rule{\textwidth}{1pt}\par
+\vspace{0.3cm}
+{\Large\bfseries Validación de Seguridad de Entradas de Datos en la aplicación móvil AprendIA y su Backend\par}
+\vspace{0.3cm}
+\noindent\rule{\textwidth}{1pt}\par
+
+\vspace{2.5cm}
+
+\begin{tabular}{c}
+\textbf{Materia:} Seguridad de la Información \\
+\textbf{Profesor:} MC. Jose Alonso Macias Montoya \\
+\textbf{Corte:} Corte 3 / Unidad III: Seguridad en Aplicaciones Móviles \\
+\end{tabular}
+
+\vspace{2cm}
+
+{\bfseries\large Alumnos:\par}
+\vspace{0.3cm}
+Miguel Ángel Gutiérrez Gómez \\
+Jesús Imanol Castillo Avendaño \\
+Miguel Ángel Molina Gómez
+
+\vspace{1cm}
+
+{\bfseries\large Matrículas:\par}
+\vspace{0.3cm}
+233382 \\
+233287 \\
+233371
+
+\vfill
+
+{\bfseries Suchiapa, Chiapas, a 29 de julio de 2026}
+
+\end{titlepage}
+
+\newpage
+\tableofcontents
+\newpage
+
+% ============================================================
+\section{Introducción}
+
+Este documento presenta la \textbf{validación de seguridad de las entradas de datos} de la aplicación educativa AprendIA, orientada a personas con discapacidad auditiva. El documento cubre dos componentes del sistema:
+
+\begin{itemize}[leftmargin=1.5cm]
+    \item El \textbf{cliente móvil} (Flutter/Dart, arquitectura limpia \texttt{\seqsplit{data/domain/presentation}}), evaluado originalmente contra el checklist de validación y sanitización de entradas.
+    \item El \textbf{backend} (Spring Boot 3.4 / Java 21, \texttt{\seqsplit{aprendia-backend}}), que expone la API REST consumida por el cliente y por el panel administrativo, y que es responsable de toda la validación del lado del servidor que en la primera fase del proyecto había quedado documentada como \emph{fuera de alcance}.
+
+\end{itemize}
+
+El rasgo distintivo del cliente es que \textbf{no usa formularios de usuario/contraseña ni campos de texto libre} para el flujo del estudiante: la autenticación del alumno es por código QR con token, y los ejercicios se resuelven por selección de letras/imágenes, cámara y micrófono. El backend, en cambio, sí expone formularios estructurados (JSON) para autenticación de administradores, autorregistro de usuarios, registro de estudiantes (con datos personales, dirección y familiares) y administración de catálogos (dependencias, metodologías, municipios, perfiles, roles, estados).
+
+\textbf{Trazabilidad.} El trabajo del cliente está implementado y versionado en la rama \texttt{\seqsplit{input-validate}} del repositorio móvil y es verificable con \texttt{\seqsplit{flutter analyze}}, \texttt{\seqsplit{flutter test}} y los archivos citados. El trabajo del backend está implementado en el repositorio \texttt{\seqsplit{aprendia-backend}} (rama \texttt{\seqsplit{somer}}) y es verificable revisando las anotaciones de \emph{Jakarta Bean Validation} en los DTO, el \texttt{\seqsplit{GlobalExceptionHandler}} y la configuración de \texttt{\seqsplit{SecurityConfig}}.
+
+\section{Recursos Utilizados}
+
+\begin{itemize}[leftmargin=1.5cm]
+    \item \textbf{Cliente:} Flutter / Dart (SDK $\geq$3.4.4), arquitectura limpia; \texttt{\seqsplit{dio}} (red), \texttt{\seqsplit{flutter\_secure\_storage}} (sesión cifrada); análisis estático con \texttt{\seqsplit{flutter\_lints}}; pruebas con \texttt{\seqsplit{flutter\_test}}; CI con GitHub Actions.
+    \item \textbf{Backend:} Spring Boot 3.4.0 / Java 21, Maven; \texttt{\seqsplit{spring-boot-starter-validation}} (Jakarta Bean Validation / Hibernate Validator); \texttt{\seqsplit{spring-boot-starter-security}} (JWT + roles); \texttt{\seqsplit{spring-boot-starter-data-jpa}} + PostgreSQL (consultas parametrizadas); \texttt{\seqsplit{springdoc-openapi}} (documentación generada desde las mismas anotaciones de validación); Flyway (migraciones versionadas).
+    \item \textbf{Estándar de referencia:} OWASP \emph{MASVS} y \emph{Mobile Top 10} (cliente); OWASP \emph{ASVS} / \emph{API Security Top 10} (backend).
+\end{itemize}
+
+\section{Metodología}
+
+Se aplicó la misma metodología en ambos componentes: (1) \textbf{mapeo de puntos de entrada} recorriendo el código fuente (\texttt{\seqsplit{lib/}} en el cliente, \texttt{\seqsplit{src/main/java}} en el backend); (2) \textbf{evaluación apartado por apartado} del checklist institucional, con estado (\Cumple/\Parcial/\NoAplica/\Fuera) y evidencia en código; (3) \textbf{verificación} —en el cliente con \texttt{\seqsplit{flutter analyze}} y \texttt{\seqsplit{flutter test}}; en el backend por inspección directa de las anotaciones de validación, del manejador global de excepciones y de la configuración de seguridad, dado que el proyecto aún no cuenta con una suite de pruebas automatizadas (ver Sección~\ref{sec:backend-parcial}).
+
+\textbf{Criterio de estados}
+\begin{itemize}[leftmargin=1.5cm]
+    \item \Cumple\ --- implementado y verificado.
+    \item \Parcial\ --- implementado pero pendiente de un paso o incompleto para algunos campos.
+    \item \NoAplica\ --- no relevante para este componente (se justifica).
+    \item \Fuera\ --- corresponde a otro componente del sistema (se justifica).
+\end{itemize}
+
+\section{Alcance: por qué no se valida lo externo al cliente}
+
+\subsection{Autenticidad e integridad del token (backend) --- \Fuera}
+\label{ssec:alcance-token}
+
+Verificar firma, expiración, emisor y permisos exige material criptográfico y estado que solo tiene el servidor (principio \emph{never trust the client}). El cliente aporta defensa en profundidad: valida el \emph{formato} del QR, usa HTTPS en el login, manda el token en el cuerpo (no en la URL) y no lo registra en logs. Esta validación se documenta a detalle, con código, en la Sección~\ref{sec:backend-servidor}.
+
+\subsection{Transporte cifrado (TLS/HTTPS) --- depende de infraestructura}
+
+Los servicios de evaluación (\texttt{\seqsplit{20.245.212.209:5000/5001}}) exponen HTTP sin TLS: son IPs sin dominio ni certificado. Forzar \texttt{\seqsplit{https}} en el cliente antes de que el servidor ofrezca TLS dejaría la app sin conexión. \textbf{Riesgo residual: Alto} (MASVS-NETWORK); se escala como dependencia bloqueante a infraestructura. Este hallazgo sigue vigente y es independiente del trabajo de validación de entradas documentado en este informe.
+
+\section{Tipos de entrada de datos y su validación (Cliente)}
+
+La app tiene siete tipos de entrada de datos externos. La siguiente tabla mapea cada uno con su forma de validación, la \textbf{llamada a función} responsable y el archivo. Los bloques de código de cada validación se muestran en la Sección~\ref{sec:cliente-desarrollo}.
+
+\begin{longtable}{p{3.1cm}p{6.6cm}p{4.3cm}}
+\toprule
+\textbf{Tipo de entrada} & \textbf{Forma de validación y llamada a función} & \textbf{Archivo} \\
+\midrule
+\endhead
+Token de QR (texto) & Allowlist ASCII + longitud 8--4096: \texttt{\seqsplit{Validators.isValidQrToken(qrCode)}} & \texttt{\seqsplit{validators.dart}} \\
+Respuesta de red (JSON) & Parseo defensivo con casts seguros: \texttt{\seqsplit{UserInfo.fromJson(json)}} & \texttt{\seqsplit{user\_info\_entity.dart}} \\
+Foto de cámara (imagen) & Foto y referencia no vacías: \texttt{\seqsplit{ExerciseInputValidator.validateWritingInput(...)}} & \texttt{\seqsplit{evaluate\_writing\_exercise\_usecase.dart}} \\
+Audio de micrófono & Audio y frase objetivo presentes: \texttt{\seqsplit{ExerciseInputValidator.validateReadingInput(...)}} & \texttt{\seqsplit{evaluate\_reading\_exercise\_usecase.dart}} \\
+Selección (índice/opción) & Rango/pertenencia al conjunto: \texttt{\seqsplit{ExerciseInputValidator.validateSelectedOption(i, n)}} & \texttt{\seqsplit{exercise\_input\_validator.dart}} \\
+URL de medios (remota) & Canonicalización con \texttt{\seqsplit{Uri.tryParse}}: \texttt{\seqsplit{sanitizeMediaUrl(url)}} & \texttt{\seqsplit{media\_url.dart}} \\
+Sesión (token + datos) & Almacenamiento cifrado: \texttt{\seqsplit{SessionManager.saveSession(...)}} & \texttt{\seqsplit{session\_manager.dart}} \\
+\bottomrule
+\end{longtable}
+
+\begin{lstlisting}[style=dartstyle,caption={Validación de la foto de cámara antes de evaluar (evaluate\_writing\_exercise\_usecase.dart)}]
+Future<WritingFeedbackEntity> call({
+  required File studentImage,
+  required String originalImageUrl,
+}) async {
+  // Regla de negocio: no evaluar sin foto tomada ni imagen de referencia.
+  if (!ExerciseInputValidator.validateWritingInput(
+    photoPath: studentImage.path,
+    referenceImage: originalImageUrl,
+  )) {
+    throw ArgumentError(
+        'Entrada de escritura invalida: falta la foto o la imagen de referencia.');
+  }
+  return await _exerciseRepository.evaluateWritingExercise(
+    studentImage: studentImage,
+    originalImageUrl: originalImageUrl,
+  );
+}
+\end{lstlisting}
+
+\section{Librerías y frameworks: origen y uso (Cliente)}
+
+Todas las dependencias provienen del repositorio oficial de paquetes de Dart/Flutter, \textbf{pub.dev}. La validación de entradas se implementa con un \textbf{módulo propio} (\texttt{\seqsplit{Validators}}), \emph{sin} una librería externa de validación: decisión de diseño para tener un único punto auditable y no depender de terceros en la lógica de seguridad.
+
+\begin{longtable}{p{3.2cm}p{3.4cm}p{7.4cm}}
+\toprule
+\textbf{Librería (versión)} & \textbf{Origen} & \textbf{Uso en el manejo de entradas} \\
+\midrule
+\endhead
+\texttt{\seqsplit{flutter\_secure\_storage}} (9.2.2) & pub.dev, publisher \texttt{\seqsplit{juliansteenbakker.nl}} & Guarda la sesión (token y datos del alumno, ya validados) en almacenamiento cifrado: Keystore (Android) / Keychain (iOS). \\
+\texttt{\seqsplit{dio}} (5.8.0) & pub.dev, publisher \texttt{\seqsplit{dio.pub}} & Cliente HTTP. Serialización segura con \texttt{\seqsplit{FormData}}/\texttt{\seqsplit{Map}}/\texttt{\seqsplit{queryParameters}} (sin concatenar), \texttt{\seqsplit{ErrorInterceptor}} y \texttt{\seqsplit{LogInterceptor}} gateado sin cuerpos. \\
+\texttt{\seqsplit{mobile\_scanner}} (5.0.1) & pub.dev, publisher \texttt{\seqsplit{juliansteenbakker.nl}} & Lee el valor crudo del QR (entrada externa) que después valida \texttt{\seqsplit{Validators.isValidQrToken}}. \\
+\texttt{\seqsplit{equatable}} (2.0.5) & pub.dev, publisher \texttt{\seqsplit{felangel.dev}} & Igualdad por valor en las entidades de dominio (p. ej. \texttt{\seqsplit{UserInfo}}). \\
+\texttt{\seqsplit{flutter\_lints}} (4.0.0, dev) & pub.dev, equipo Dart/Flutter & Reglas de análisis estático; gate de calidad en CI. \\
+\bottomrule
+\end{longtable}
+
+\noindent\textbf{Dependencia retirada.} \texttt{\seqsplit{string\_validator}} (1.2.0) estaba declarada pero solo se usaba de forma cosmética (\texttt{\seqsplit{isNumeric}} para un tamaño de fuente). Se retiró y su uso se reemplazó por \texttt{\seqsplit{Validators.isNumeric}}, eliminando una dependencia innecesaria de la superficie de ataque.
+
+\noindent\textbf{Herramientas de gobernanza (CI, no son dependencias de la app).} \texttt{\seqsplit{osv-scanner}} (Google) escanea dependencias vulnerables contra la base OSV; \texttt{\seqsplit{gitleaks}} detecta secretos; ambas corren en GitHub Actions (\texttt{\seqsplit{.github/workflows/security.yml}}).
+
+\section{Desarrollo: apartados validados (Cliente, con código y evidencia)}
+\label{sec:cliente-desarrollo}
+
+\subsection{1. Validación del lado del cliente --- \Cumple}
+
+\textbf{Estado:} \Cumple. La única entrada externa arbitraria (el token del QR) se valida por \textbf{allowlist} (ASCII imprimible, longitud 8--4096) \emph{antes} de enviarse. No valida autenticidad (eso es del backend): es defensa en profundidad.
+
+\textbf{Dónde se cumple:}
+\begin{itemize}[leftmargin=1.2cm,nosep]
+\item \texttt{\seqsplit{lib/core/validation/validators.dart}}
+\item \texttt{\seqsplit{lib/auth/presentation/viewmodels/qr\_scanner\_viewmodel.dart}}
+\end{itemize}
+
+\begin{lstlisting}[style=dartstyle,caption={Validación de formato del token de QR (validators.dart)}]
+static final RegExp printableAscii = RegExp(r'^[\x21-\x7E]+$');
+
+static bool isAllowedFreeText(String value,
+    {int minLength = 1, int maxLength = 4096}) {
+  if (!hasLengthBetween(value, minLength, maxLength)) return false;
+  return printableAscii.hasMatch(value);
+}
+
+// Solo formato; la autenticidad la valida el backend.
+static bool isValidQrToken(String value) =>
+    isAllowedFreeText(value, minLength: 8, maxLength: 4096);
+\end{lstlisting}
+
+\begin{lstlisting}[style=dartstyle,caption={Rechazo del QR con formato inválido antes de llamar a la API (qr\_scanner\_viewmodel.dart)}]
+if (!Validators.isValidQrToken(qrCode)) {
+  _errorMessage = 'El codigo QR no tiene un formato valido.';
+  _lastScannedCode = null; // permite reintentar
+  notifyListeners();
+  return;
+}
+\end{lstlisting}
+
+\screenshotplaceholder{9cm}{5.5cm}{Cliente: banner de error ante un QR con formato inválido.\\(img/cap01\_qr\_invalido.png --- repositorio móvil)}
+\captionof{figure}{Cliente: banner de error ante un QR con formato inválido.}
+
+\subsection{3 y 8c. Validación de tipo / JSON (parseo defensivo) --- \Cumple}
+
+\textbf{Estado:} \Cumple. El parseo de la respuesta de login no confía en la forma del JSON: accede por pasos con casts seguros y lanza una \texttt{\seqsplit{FormatException}} controlada si falta un campo obligatorio, en vez de un crash por desreferencia de \texttt{\seqsplit{null}}. Usa \texttt{\seqsplit{int.tryParse}} para el \texttt{\seqsplit{id}}.
+
+\textbf{Dónde se cumple:}
+\begin{itemize}[leftmargin=1.2cm,nosep]
+\item \texttt{\seqsplit{user\_info\_entity.dart}}
+\end{itemize}
+
+\begin{lstlisting}[style=dartstyle,caption={fromJson defensivo (user\_info\_entity.dart)}]
+factory UserInfo.fromJson(Map<String, dynamic> json) {
+  final data = json['data'];
+  if (data is! Map<String, dynamic>) {
+    throw const FormatException('Respuesta de login sin "data" valido.');
+  }
+  final userInfo = data['userInfo'];
+  if (userInfo is! Map<String, dynamic>) {
+    throw const FormatException('Respuesta de login sin "userInfo" valido.');
+  }
+  final id = int.tryParse('${userInfo['studentId']}');
+  final name = userInfo['nombre'];
+  final token = data['token'];
+  if (id == null || name is! String || token is! String) {
+    throw const FormatException('Respuesta de login incompleta.');
+  }
+  // ... campos opcionales caen a cadena vacia ...
+}
+\end{lstlisting}
+
+\subsection{4. Lógica de negocio --- \Cumple}
+
+\textbf{Estado:} \Cumple. \texttt{\seqsplit{ExerciseInputValidator}} comprueba las invariantes de negocio \emph{antes} de evaluar: audio y frase para lectura; foto e imagen de referencia para escritura; índice de opción dentro del conjunto; tema no vacío. Se aplica en los use cases de evaluación.
+
+\textbf{Dónde se cumple:}
+\begin{itemize}[leftmargin=1.2cm,nosep]
+\item \texttt{\seqsplit{exercises/domain/validation/exercise\_input\_validator.dart}}
+\item \texttt{\seqsplit{evaluate\_reading\_exercise\_usecase.dart}}
+\end{itemize}
+
+\begin{lstlisting}[style=dartstyle,caption={Invariantes de negocio (exercise\_input\_validator.dart)}]
+static bool validateReadingInput({
+    required String audioPath, required String targetPhrase}) {
+  if (audioPath.trim().isEmpty) return false;
+  final phrase = targetPhrase.trim();
+  return phrase.isNotEmpty && phrase.length <= maxTargetPhraseLength;
+}
+
+static bool validateSelectedOption(int index, int optionCount) =>
+    Validators.isInRange(index, min: 0, max: optionCount - 1);
+\end{lstlisting}
+
+\subsection{7 y 8d. Validación contextual / limpieza --- \Cumple}
+
+\textbf{Estado:} \Cumple. Normalización unificada para comparar respuestas: minúsculas, sin tildes ni diéresis, espacios colapsados, cubriendo formas Unicode precompuestas y descompuestas. Preserva la regla de negocio: la ñ \textbf{no} se degrada a n.
+
+\textbf{Dónde se cumple:}
+\begin{itemize}[leftmargin=1.2cm,nosep]
+\item \texttt{\seqsplit{core/text/contextual\_normalizer.dart}}
+\end{itemize}
+
+\begin{lstlisting}[style=dartstyle,caption={Normalización de texto (contextual\_normalizer.dart)}]
+static String normalize(String input) {
+  var s = input.toLowerCase().trim();
+  s = s.replaceAll(RegExp(r'\s+'), ' ');
+  // Protege la nn antes de tocar diacriticos y la restaura al final.
+  const enyeMarker = '#ENYE#';
+  s = s.replaceAll('n~', enyeMarker);
+  _accentMap.forEach((a, base) => s = s.replaceAll(a, base)); // a->a, u->u...
+  s = s.replaceAll(_combiningMarks, ''); // formas descompuestas (NFD)
+  return s.replaceAll(enyeMarker, 'n~');
+}
+\end{lstlisting}
+
+\subsection{8b. Filtrado (allowlist) --- \Cumple}
+
+\textbf{Estado:} \Cumple. Se usa \textbf{allowlist} (cerrada por defecto) en lugar de blacklist: una entrada libre es válida solo si encaja en \texttt{\seqsplit{printableAscii}} y en un rango de longitud. Reutilizable desde el módulo central.
+
+\textbf{Dónde se cumple:}
+\begin{itemize}[leftmargin=1.2cm,nosep]
+\item \texttt{\seqsplit{validators.dart}}
+\end{itemize}
+
+\subsection{8f. Funciones/librerías seguras (serialización HTTP; ORM N/A) --- \Cumple}
+
+\textbf{Estado:} \Cumple. Los paths interpolados usan \texttt{\seqsplit{Uri.encodeComponent}} y los cuerpos usan \texttt{\seqsplit{FormData}}/\texttt{\seqsplit{Map}}; no hay concatenación manual de URLs. Se blinda con una \textbf{prueba de arquitectura} que falla si reaparecen los patrones frágiles. \textbf{ORM = No aplica}: no hay base de datos local con consultas de usuario.
+
+\textbf{Dónde se cumple:}
+\begin{itemize}[leftmargin=1.2cm,nosep]
+\item \texttt{\seqsplit{test/architecture/safe\_http\_serialization\_test.dart}}
+\end{itemize}
+
+\begin{lstlisting}[style=dartstyle,caption={Prueba de arquitectura que impide regresiones (safe\_http\_serialization\_test.dart)}]
+test('no queda ningun split(":") de URL en lib/', () {
+  final offenders = <String>[];
+  for (final file in dartFiles) {
+    if (file.readAsStringSync().contains("split(':')")) {
+      offenders.add(file.path);
+    }
+  }
+  expect(offenders, isEmpty);
+});
+\end{lstlisting}
+
+\subsection{8h. Canonicalización / path traversal --- \Cumple}
+
+\textbf{Estado:} \Cumple. \texttt{\seqsplit{sanitizeMediaUrl}} reemplaza un saneo frágil (\texttt{\seqsplit{split(':')}}) que perdía el esquema de la URL (\texttt{\seqsplit{https://x}} $\to$ \texttt{\seqsplit{//x}}). Usa \texttt{\seqsplit{Uri.tryParse}} como reja de validez.
+
+\textbf{Dónde se cumple:}
+\begin{itemize}[leftmargin=1.2cm,nosep]
+\item \texttt{\seqsplit{core/net/media\_url.dart}}
+\end{itemize}
+
+\begin{lstlisting}[style=dartstyle,caption={Canonicalización de URLs de medios (media\_url.dart)}]
+String sanitizeMediaUrl(String raw) {
+  final trimmed = raw.trim();
+  if (trimmed.isEmpty) return '';
+  // Prefijo espurio antes de ':http' -> conservar desde 'http'.
+  final marker = trimmed.indexOf(':http');
+  final candidate = marker >= 0 ? trimmed.substring(marker + 1) : trimmed;
+  if (Uri.tryParse(candidate) == null) return ''; // reja de validez
+  return candidate;
+}
+\end{lstlisting}
+
+\subsection{9. Uso de librerías/frameworks de validación --- \Cumple}
+
+\textbf{Estado:} \Cumple. Módulo \texttt{\seqsplit{Validators}} como punto único de validación. Se \textbf{retiró} la dependencia \texttt{\seqsplit{string\_validator}}, que estaba declarada y solo se usaba de forma cosmética, reemplazándola por \texttt{\seqsplit{Validators.isNumeric}}.
+
+\textbf{Dónde se cumple:}
+\begin{itemize}[leftmargin=1.2cm,nosep]
+\item \texttt{\seqsplit{validators.dart}}
+\item \texttt{\seqsplit{pubspec.yaml}}
+\end{itemize}
+
+\subsection{11. Gestión de errores y almacenamiento seguro --- \Cumple}
+
+\textbf{Estado:} \Cumple. Mensajes de interfaz genéricos y logs sin secretos: se eliminaron/gatearon todos los \texttt{\seqsplit{print()}}; ninguno emite token, cuerpos, cabeceras ni datos personales, y el \texttt{\seqsplit{LogInterceptor}} de Dio solo se registra en \texttt{\seqsplit{kDebugMode}} y sin cuerpos. Además, la sesión se guarda \textbf{cifrada} con \texttt{\seqsplit{flutter\_secure\_storage}} y \texttt{\seqsplit{clearSession()}} borra las 6 claves.
+
+\textbf{Dónde se cumple:}
+\begin{itemize}[leftmargin=1.2cm,nosep]
+\item \texttt{\seqsplit{dio\_client.dart}}
+\item \texttt{\seqsplit{session\_manager.dart}}
+\end{itemize}
+
+\begin{lstlisting}[style=dartstyle,caption={LogInterceptor gateado y sin cuerpos (dio\_client.dart)}]
+if (kDebugMode) {
+  _dio.interceptors.add(LogInterceptor(
+    request: true, requestHeader: false,
+    responseHeader: false, responseBody: false,
+  ));
+}
+\end{lstlisting}
+
+\begin{lstlisting}[style=dartstyle,caption={Sesión en almacenamiento cifrado (session\_manager.dart)}]
+final FlutterSecureStorage _storage; // Keystore/Keychain
+
+Future<void> clearSession() async {
+  for (final key in _allKeys) { // las 6 claves
+    await _storage.delete(key: key);
+  }
+}
+\end{lstlisting}
+
+\section{Apartados No aplica (Cliente, justificados)}
+
+\begin{description}[leftmargin=1.2cm,style=nextline]
+\item[5. Patrones (email/Luhn/contraseñas)] \textbf{Estado:} \NoAplica. \textbf{Por qué no aplica:} la app no captura correo, contraseñas ni tarjetas: autenticación por QR.
+\item[6. Validación cruzada] \textbf{Estado:} \NoAplica. \textbf{Por qué no aplica:} no hay formularios multi-campo; el caso análogo (índice dentro de opciones) lo cubre \texttt{\seqsplit{validateSelectedOption}}.
+\item[8a. Escapado HTML/JS/SQL] \textbf{Estado:} \NoAplica. \textbf{Por qué no aplica:} interfaz nativa; sin SQL de usuario expuesto.
+\item[8e. Codificación] \textbf{Estado:} \NoAplica. \textbf{Por qué no aplica:} el token va en el cuerpo; se usa \texttt{\seqsplit{Uri.encodeComponent}} en segmentos de path.
+\item[8g. Reemplazo de caracteres] \textbf{Estado:} \NoAplica. \textbf{Por qué no aplica:} no hay entrada de usuario con comillas/scripts.
+\item[8i. Escape de salida] \textbf{Estado:} \NoAplica. \textbf{Por qué no aplica:} interfaz 100\,\% nativa Flutter.
+\item[10. Educación/capacitación] \textbf{Estado:} \NoAplica. \textbf{Por qué no aplica:} no evidenciable desde el repo; \texttt{\seqsplit{CONTRIBUTING.md}} documenta las reglas y sirve de material de incorporación.
+\end{description}
+
+\section{Apartado Parcial (Cliente)}
+
+\subsection*{8j. Revisiones y auditorías (SAST/pentest) --- \Parcial}
+
+\textbf{Estado:} \Parcial. Se añadió un workflow de CI con \texttt{\seqsplit{flutter analyze}} como \emph{gate}, \texttt{\seqsplit{flutter test}}, \texttt{\seqsplit{osv-scanner}} (dependencias) y \texttt{\seqsplit{gitleaks}} (secretos), más una guía de contribución.
+
+\textbf{Dónde se cumple:}
+\begin{itemize}[leftmargin=1.2cm,nosep]
+\item \texttt{\seqsplit{.github/workflows/security.yml}}
+\item \texttt{\seqsplit{CONTRIBUTING.md}}
+\end{itemize}
+
+\textbf{Por qué es parcial:} el workflow debe ejecutarse en una PR real para confirmarse en producción, y el pentest manual está pendiente de agendar.
+
+\section{Correcciones aplicadas (rama input-validate, Cliente)}
+
+\begin{longtable}{p{4.1cm}p{2cm}p{6.9cm}}
+\toprule
+\textbf{Brecha} & \textbf{Severidad} & \textbf{Acción} \\
+\midrule
+\endhead
+Token en \texttt{\seqsplit{SharedPreferences}} en claro; \texttt{\seqsplit{clearSession}} incompleto & Alta & \texttt{\seqsplit{flutter\_secure\_storage}}; \texttt{\seqsplit{clearSession}} borra las 6 claves \\
+Token/datos en logs (\texttt{\seqsplit{print}} + \texttt{\seqsplit{LogInterceptor}} con cuerpos) & Alta & \texttt{\seqsplit{print}} eliminados/gateados; \texttt{\seqsplit{LogInterceptor}} solo en \texttt{\seqsplit{kDebugMode}} y sin cuerpos \\
+QR sin validación de formato & Media & Allowlist por regex antes de enviarlo \\
+\texttt{\seqsplit{fromJson}} sin null-safety & Media & Parseo defensivo con \texttt{\seqsplit{FormatException}} \\
+Reglas de negocio sin validar & Media & \texttt{\seqsplit{ExerciseInputValidator}} en los use cases \\
+Saneo de URL frágil (pierde esquema) & Baja & \texttt{\seqsplit{sanitizeMediaUrl}}; 9 copias reemplazadas \\
+Normalización divergente (diéresis) & Baja & \texttt{\seqsplit{ContextualNormalizer}} compartido \\
+Dependencia cosmética \texttt{\seqsplit{string\_validator}} & Baja & Retirada; módulo \texttt{\seqsplit{Validators}} \\
+\bottomrule
+\end{longtable}
+
+\noindent\textbf{Verificación reproducible} (rama \texttt{\seqsplit{input-validate}}): \texttt{\seqsplit{flutter analyze}} $\rightarrow$ \textbf{0 errores}; \texttt{\seqsplit{flutter test}} $\rightarrow$ \textbf{22/22} pruebas de seguridad en verde (unitarias + arquitectura), y 169 pruebas del proyecto en verde; \texttt{\seqsplit{grep}} de \texttt{\seqsplit{print(}} y \texttt{\seqsplit{split(':')}} en \texttt{\seqsplit{lib/}} $\rightarrow$ \textbf{0} en código.
+
+\section{Tabla Resumen de Cumplimiento (Cliente)}
+\label{sec:tabla-cliente}
+
+\begin{longtable}{p{0.5cm}p{4cm}p{2.6cm}p{6.2cm}}
+\toprule
+\textbf{\#} & \textbf{Apartado} & \textbf{Estado} & \textbf{Evidencia} \\
+\midrule
+\endhead
+1 & Validación cliente & \Cumple & \texttt{\seqsplit{core/validation/validators.dart}} \\
+2 & Validación servidor & \Fuera & Backend; HTTPS login en cliente \\
+3 & Validación de tipo & \Cumple & \texttt{\seqsplit{user\_info\_entity.dart}} \\
+4 & Lógica de negocio & \Cumple & \texttt{\seqsplit{exercise\_input\_validator.dart}} \\
+5 & Patrones (email/Luhn) & \NoAplica & Login QR; sin campos sensibles \\
+6 & Validación cruzada & \NoAplica & Sin formularios multi-campo \\
+7 & Validación contextual & \Cumple & \texttt{\seqsplit{core/text/contextual\_normalizer.dart}} \\
+8a & Escapado HTML/JS/SQL & \NoAplica & Sin WebView/SQL de usuario \\
+8b & Filtrado (allowlist) & \Cumple & \texttt{\seqsplit{validators.dart}} \\
+8c & Validación tipo JSON & \Cumple & \texttt{\seqsplit{user\_info\_entity.dart}} \\
+8d & Limpieza (trim/normalize) & \Cumple & \texttt{\seqsplit{contextual\_normalizer.dart}} \\
+8e & Codificación & \NoAplica & Token en cuerpo; \texttt{\seqsplit{Uri.encodeComponent}} \\
+8f & Librerías seguras / ORM N/A & \Cumple & \texttt{\seqsplit{test/architecture/}} \\
+8g & Reemplazo de caracteres & \NoAplica & Sin entrada con scripts \\
+8h & Canonicalización & \Cumple & \texttt{\seqsplit{core/net/media\_url.dart}} \\
+8i & Escape de salida & \NoAplica & Interfaz nativa \\
+8j & Revisiones/auditorías & \Parcial & \texttt{\seqsplit{.github/workflows/security.yml}} \\
+9 & Librerías de validación & \Cumple & \texttt{\seqsplit{validators.dart}}; \texttt{\seqsplit{pubspec.yaml}} \\
+10 & Educación/capacitación & \NoAplica & \texttt{\seqsplit{CONTRIBUTING.md}} \\
+11 & Gestión de errores & \Cumple & \texttt{\seqsplit{dio\_client.dart}}; \texttt{\seqsplit{session\_manager.dart}} \\
+\bottomrule
+\end{longtable}
+
+\noindent\textbf{Conteo final (20 apartados, Cliente):} \Cumple\ = \textbf{11} (1, 3, 4, 7, 8b, 8c, 8d, 8f, 8h, 9, 11) \quad \Parcial\ = \textbf{1} (8j) \quad \NoAplica\ = \textbf{7} (5, 6, 8a, 8e, 8g, 8i, 10) \quad \Fuera\ = \textbf{1} (2) \quad \NoCumple\ = 0.
+
+\section{Índice de capturas requeridas (Cliente)}
+
+Cada captura referida en esta sección reside en \texttt{\seqsplit{docs/img/}} del repositorio móvil (fuera del alcance de este repositorio de backend) y se documenta aquí únicamente por trazabilidad con el informe original.
+
+\begin{longtable}{p{1.8cm}p{7cm}p{4.7cm}}
+\toprule
+\textbf{Apartado} & \textbf{Qué debe mostrar} & \textbf{Archivo} \\
+\midrule
+\endhead
+1 & Banner "El código QR no tiene un formato válido" & \texttt{\seqsplit{img/cap01\_qr\_invalido.png}} \\
+3 & Login exitoso tras un QR válido & \texttt{\seqsplit{img/cap03\_login\_ok.png}} \\
+4 & Botón "Enviar" deshabilitado sin la entrada requerida & \texttt{\seqsplit{img/cap04\_regla\_negocio.png}} \\
+7 & Banco de letras sin tildes ("Deletrear mi nombre") & \texttt{\seqsplit{img/cap07\_deletreo.png}} \\
+8f & Consola con las pruebas en verde & \texttt{\seqsplit{img/cap08\_tests\_verdes.png}} \\
+8h & Ejercicios con imagen renderizando bien & \texttt{\seqsplit{img/cap09\_imagenes\_ok.png}} \\
+11 & \texttt{\seqsplit{logcat}} en login sin token ni nombre & \texttt{\seqsplit{img/cap11\_log\_sin\_token.png}} \\
+\bottomrule
+\end{longtable}
+
+% ============================================================
+% ==================  PARTE BACKEND  ========================
+% ============================================================
+\newpage
+\section{Backend: Validación de Seguridad de Entradas de Datos}
+\label{sec:backend-servidor}
+
+Esta sección documenta, apartado por apartado y con código real del repositorio \texttt{\seqsplit{aprendia-backend}} (rama \texttt{\seqsplit{somer}}), todo lo relacionado con la validación de entradas que se ejecuta \textbf{del lado del servidor} --- precisamente lo que la Sección~\ref{ssec:alcance-token} había dejado registrado como \Fuera\ por no ser responsabilidad del cliente.
+
+\subsection{Alcance y arquitectura}
+
+El backend es una API REST construida con \textbf{Spring Boot 3.4.0} sobre \textbf{Java 21}, organizada por \emph{features} (\texttt{\seqsplit{feature/auth}}, \texttt{\seqsplit{feature/user}}, \texttt{\seqsplit{feature/catalogs}}, \texttt{\seqsplit{feature/healthCheck}}) más un paquete transversal \texttt{\seqsplit{security}} (filtros de autenticación) y \texttt{\seqsplit{exception}} (manejo centralizado de errores). Todas las entradas externas llegan como \textbf{JSON sobre HTTP} (cuerpos de petición, variables de ruta, parámetros de consulta y cabeceras); no hay renderizado de HTML del lado del servidor ni acceso a sistema de archivos a partir de datos de usuario.
+
+\subsection{Recursos utilizados (Backend)}
+
+\begin{itemize}[leftmargin=1.5cm]
+    \item \textbf{Validación declarativa:} \texttt{\seqsplit{spring-boot-starter-validation}} (Jakarta Bean Validation, implementada por Hibernate Validator), aplicada sobre \emph{records} de Java que representan los DTO de entrada.
+    \item \textbf{Autenticación/autorización:} \texttt{\seqsplit{spring-boot-starter-security}} + \texttt{\seqsplit{jjwt}} (JSON Web Tokens firmados con HMAC-SHA256) + \texttt{\seqsplit{@PreAuthorize}} basado en roles.
+    \item \textbf{Persistencia:} \texttt{\seqsplit{spring-boot-starter-data-jpa}} sobre PostgreSQL, con consultas 100\,\% parametrizadas (sin \texttt{\seqsplit{@Query}} nativo en todo el proyecto).
+    \item \textbf{Manejo de errores:} \texttt{\seqsplit{GlobalExceptionHandler}} (\texttt{\seqsplit{@RestControllerAdvice}}) centraliza la traducción de excepciones de validación a respuestas HTTP consistentes.
+    \item \textbf{Documentación generada:} \texttt{\seqsplit{springdoc-openapi}} construye el contrato OpenAPI/Swagger a partir de las mismas anotaciones de validación, evitando divergencia entre documentación y código.
+\end{itemize}
+
+\subsection{Metodología (Backend)}
+
+Se recorrieron los cinco puntos de entrada de la aplicación (controladores REST, cuerpos JSON deserializados, variables de ruta, parámetros de consulta y cabeceras de autenticación), se identificó el mecanismo de validación asociado a cada uno y se contrastó contra el mismo checklist institucional usado para el cliente. A diferencia del cliente, el backend \textbf{no cuenta todavía} con una suite de pruebas automatizadas (\texttt{\seqsplit{src/test/java}} está vacío) ni con un pipeline de CI; esto se documenta explícitamente como una brecha en la Sección~\ref{sec:backend-parcial}.
+
+\subsection{Mapa de puntos de entrada (Backend)}
+
+\begin{longtable}{p{4.4cm}p{6cm}p{3cm}}
+\toprule
+\textbf{Punto de entrada} & \textbf{Evidencia} & \textbf{Tipo de dato} \\
+\midrule
+\endhead
+Login admin (cuerpo JSON) & \texttt{\seqsplit{AuthController.loginAdmin}} / \texttt{\seqsplit{UserLoginDTO}} & Credenciales (texto) \\
+Login estudiante (cuerpo JSON) & \texttt{\seqsplit{AuthController.loginStudent}} / \texttt{\seqsplit{StudentQrLoginDTO}} & Token QR (texto) \\
+Validación de token (cuerpo JSON) & \texttt{\seqsplit{AuthController.validateToken}} / \texttt{\seqsplit{TokenValidationRequestDTO}} & Token JWT (texto) \\
+Autorregistro de usuario (cuerpo JSON) & \texttt{\seqsplit{UserController.registerUser}} / \texttt{\seqsplit{RegisterRequest}} & Usuario / correo / contraseña \\
+Registro de estudiante (JSON anidado) & \texttt{\seqsplit{UserController.registerStudent}} / \texttt{\seqsplit{StudentRequest}} & Persona + dirección + familiares \\
+Catálogos administrativos (cuerpo JSON) & \texttt{\seqsplit{Dependency/Metodology/Municipality/Profile/Role/State RequestDTO}} & Texto / numérico / booleano \\
+Identificadores de recurso (ruta) & \texttt{\seqsplit{@PathVariable Long id}}, \texttt{\seqsplit{@PathVariable Integer id}} & Numérico \\
+Paginación (parámetros de consulta) & \texttt{\seqsplit{Pageable}}, \texttt{\seqsplit{@PageableDefault}} & Numérico \\
+Token de sesión (cabecera) & \texttt{\seqsplit{Authorization: Bearer <jwt>}} / \texttt{\seqsplit{JwtAuthenticationFilter}} & Token (texto) \\
+Clave de servicio (cabecera) & \texttt{\seqsplit{X-API-KEY}} / \texttt{\seqsplit{ApiKeyFilter}} & Clave (texto) \\
+\bottomrule
+\end{longtable}
+
+\subsection{Tipos de entrada de datos y su validación (Backend)}
+\label{ssec:backend-tipos}
+
+\begin{longtable}{p{3.2cm}p{6.4cm}p{4.2cm}}
+\toprule
+\textbf{Tipo de entrada} & \textbf{Forma de validación y llamada a función} & \textbf{Archivo} \\
+\midrule
+\endhead
+Credenciales de login admin & \texttt{\seqsplit{@NotBlank}} en \texttt{\seqsplit{UserLoginDTO}}, verificadas por \texttt{\seqsplit{AuthenticationManager.authenticate(...)}} & \texttt{\seqsplit{UserLoginDTO.java}}, \texttt{\seqsplit{AuthServiceImpl.java}} \\
+Código QR de estudiante & \texttt{\seqsplit{@NotBlank}} en \texttt{\seqsplit{StudentQrLoginDTO}}; búsqueda parametrizada \texttt{\seqsplit{UserRepository.findByQrCode(qr)}} & \texttt{\seqsplit{StudentQrLoginDTO.java}} \\
+Token JWT recibido & Verificación de firma HMAC-SHA256 y expiración: \texttt{\seqsplit{JwtUtil.validateToken(token, userDetails)}} & \texttt{\seqsplit{JwtUtil.java}}, \texttt{\seqsplit{JwtAuthenticationFilter.java}} \\
+Registro de usuario (usuario / correo / contraseña) & \texttt{\seqsplit{@NotBlank}}, \texttt{\seqsplit{@Email}}, \texttt{\seqsplit{@Size(min,max)}} en \texttt{\seqsplit{RegisterRequest}} + \texttt{\seqsplit{@Valid}} en el controlador & \texttt{\seqsplit{RegisterRequest.java}}, \texttt{\seqsplit{UserController.java}} \\
+Registro de estudiante (datos anidados) & Validación en cascada \texttt{\seqsplit{@Valid}} sobre \texttt{\seqsplit{PersonRequest}}, \texttt{\seqsplit{AddressRequest}} y \texttt{\seqsplit{List<RelativeRequest>}} & \texttt{\seqsplit{StudentRequest.java}} \\
+Referencias a catálogos (perfil, municipio, estado) & Existencia verificada en BD: \texttt{\seqsplit{ensureExists(repository, id, nombre)}} & \texttt{\seqsplit{UserServiceImpl.java}} \\
+Duplicados de negocio (usuario, correo, CURP) & \texttt{\seqsplit{UserRepository.existsByUsername/existsByEmail}}, \texttt{\seqsplit{PersonRepository.existsByCurp}} & \texttt{\seqsplit{UserServiceImpl.java}} \\
+Identificadores de ruta (\texttt{\seqsplit{id}}) & Coerción de tipo de Spring MVC + \texttt{\seqsplit{JpaRepository.existsById(id)}} & Controladores REST \\
+Cuerpo JSON malformado / tipo incorrecto & \texttt{\seqsplit{HttpMessageNotReadableException}} $\to$ \texttt{\seqsplit{GlobalExceptionHandler.handleHttpMessageNotReadable}} & \texttt{\seqsplit{GlobalExceptionHandler.java}} \\
+Clave de servicio (cabecera \texttt{\seqsplit{X-API-KEY}}) & Presencia y existencia no-obsoleta: \texttt{\seqsplit{ApiKeyRepository.findByKeyHash(key)}} & \texttt{\seqsplit{ApiKeyFilter.java}} \\
+\bottomrule
+\end{longtable}
+
+\begin{lstlisting}[style=javastyle,caption={DTO de registro con validación declarativa (RegisterRequest.java)}]
+public record RegisterRequest(
+
+    @NotBlank(message = "El nombre de usuario es obligatorio.")
+    @Size(min = 3, max = 50, message = "El nombre de usuario debe tener entre 3 y 50 caracteres.")
+    String username,
+
+    @NotBlank(message = "El correo electronico es obligatorio.")
+    @Email(message = "El formato de correo electronico no es valido.")
+    @Size(max = 100, message = "El correo electronico no puede superar los 100 caracteres.")
+    String email,
+
+    @NotBlank(message = "La contrasena es obligatoria.")
+    @Size(min = 6, max = 100, message = "La contrasena debe tener entre 6 y 100 caracteres.")
+    String password
+) {}
+\end{lstlisting}
+
+\begin{lstlisting}[style=javastyle,caption={Activación de la validación en el controlador (UserController.java)}]
+@PostMapping("/register")
+@SecurityRequirements
+public ResponseEntity<UserResponse> registerUser(
+        @Valid @RequestBody RegisterRequest registerRequest) {
+    UserResponse response = userService.registerUser(registerRequest);
+    return new ResponseEntity<>(response, HttpStatus.CREATED);
+}
+\end{lstlisting}
+
+\subsection{Librerías y frameworks: origen y uso (Backend)}
+
+Todas las dependencias provienen del repositorio oficial \textbf{Maven Central}, resueltas por Maven a partir de \texttt{\seqsplit{pom.xml}} (padre \texttt{\seqsplit{spring-boot-starter-parent:3.4.0}}). No existe una dependencia declarada explícitamente para \texttt{\seqsplit{hibernate-validator}} ni \texttt{\seqsplit{jakarta.validation-api}}: ambas llegan de forma \textbf{transitiva} a través de \texttt{\seqsplit{spring-boot-starter-validation}}.
+
+\begin{longtable}{p{4cm}p{3.2cm}p{6.8cm}}
+\toprule
+\textbf{Librería (versión)} & \textbf{Origen} & \textbf{Uso en el manejo de entradas} \\
+\midrule
+\endhead
+\texttt{\seqsplit{spring-boot-starter-\allowbreak validation}} (3.4.0) & Maven Central, \texttt{\seqsplit{org.springframework.boot}} & Habilita \texttt{\seqsplit{@Valid}} y trae transitivamente Hibernate Validator (implementación de referencia de Jakarta Bean Validation) que ejecuta \texttt{\seqsplit{@NotNull}}/\texttt{\seqsplit{@NotBlank}}/\texttt{\seqsplit{@Size}}/\texttt{\seqsplit{@Min}}/\texttt{\seqsplit{@Email}} sobre los DTO. \\
+\texttt{\seqsplit{spring-boot-starter-\allowbreak security}} (3.4.0) & Maven Central, \texttt{\seqsplit{org.springframework.security}} & Autenticación/autorización; \texttt{\seqsplit{BCryptPasswordEncoder}} para contraseñas; \texttt{\seqsplit{@PreAuthorize("hasRole(...)")}} para permisos por método. \\
+\texttt{\seqsplit{io.jsonwebtoken:jjwt-\allowbreak api/impl/jackson}} (0.11.5) & Maven Central, \texttt{\seqsplit{io.jsonwebtoken}} & Emisión y \textbf{verificación de firma} de tokens JWT (HS256) --- validación de autenticidad e integridad del lado del servidor. \\
+\texttt{\seqsplit{spring-boot-starter-\allowbreak data-jpa}} (3.4.0) & Maven Central, \texttt{\seqsplit{org.springframework.boot}} & Acceso a datos vía Hibernate ORM con consultas derivadas y parámetros ligados (\emph{prepared statements}), previniendo inyección SQL. \\
+\texttt{\seqsplit{com.fasterxml.jackson}} (transitiva, vía \texttt{\seqsplit{spring-boot-starter-web}}) & Maven Central, \texttt{\seqsplit{com.fasterxml.jackson.core}} & Serialización/deserialización JSON con tipado estricto (rechaza tipos incompatibles con \texttt{\seqsplit{InvalidFormatException}}) y escapado automático de caracteres especiales en la salida JSON. \\
+\texttt{\seqsplit{org.postgresql:postgresql}} (runtime) & Maven Central, \texttt{\seqsplit{org.postgresql}} & Driver JDBC; ejecuta las sentencias preparadas generadas por Hibernate. \\
+\texttt{\seqsplit{org.flywaydb:flyway-core}} & Maven Central, \texttt{\seqsplit{org.flywaydb}} & Migraciones de esquema versionadas (integridad estructural de los datos persistidos). \\
+\texttt{\seqsplit{springdoc-openapi-\allowbreak starter-webmvc-ui}} (2.8.5) & Maven Central, \texttt{\seqsplit{org.springdoc}} & Genera la documentación OpenAPI/Swagger a partir de las mismas anotaciones de validación (contrato de entrada siempre sincronizado con el código). \\
+\bottomrule
+\end{longtable}
+
+\noindent\textbf{Decisión de diseño.} No se usa ninguna librería de sanitización de HTML/JS (p. ej. OWASP Java HTML Sanitizer o ESAPI) porque el backend \textbf{no renderiza HTML}: es una API JSON pura consumida por clientes que hacen su propio \emph{output encoding} al presentar los datos.
+
+\section{Backend: Desarrollo --- apartados validados (con código y evidencia)}
+
+\subsection{2. Validación del lado del servidor --- \Cumple}
+
+\textbf{Estado:} \Cumple. Las cuatro subcategorías del checklist institucional (\emph{autenticidad}, \emph{consistencia}, \emph{integridad}, \emph{permisos}) están cubiertas:
+
+\begin{itemize}[leftmargin=1.2cm]
+    \item \textbf{Autenticidad e integridad del token:} \texttt{\seqsplit{JwtUtil}} firma los tokens con HMAC-SHA256 y, al validarlos, \texttt{\seqsplit{Jwts.parserBuilder().setSigningKey(...).parseClaimsJws(token)}} recalcula y verifica la firma; cualquier alteración del payload o de la firma lanza \texttt{\seqsplit{SecurityException}}/\texttt{\seqsplit{MalformedJwtException}}, y la expiración se comprueba aparte.
+    \item \textbf{Consistencia:} las referencias a catálogos enviadas por el cliente (perfil, municipio, estado) se verifican contra la base de datos antes de persistir (\texttt{\seqsplit{ensureExists}}).
+    \item \textbf{Permisos:} cada endpoint mutante está anotado con \texttt{\seqsplit{@PreAuthorize("hasRole('ADMIN')")}}, evaluado por Spring Security con \texttt{\seqsplit{@EnableMethodSecurity}}.
+\end{itemize}
+
+\textbf{Dónde se cumple:}
+\begin{itemize}[leftmargin=1.2cm,nosep]
+\item \texttt{\seqsplit{JwtUtil.java}}
+\item \texttt{\seqsplit{JwtAuthenticationFilter.java}}
+\item \texttt{\seqsplit{SecurityConfig.java}}
+\item \texttt{\seqsplit{UserServiceImpl.java}}
+\end{itemize}
+
+\begin{lstlisting}[style=javastyle,caption={Verificación criptográfica de la firma y expiración del JWT (JwtUtil.java)}]
+private Claims getAllClaimsFromToken(String token) {
+    return Jwts.parserBuilder()
+            .setSigningKey(getSigningKey())
+            .build()
+            .parseClaimsJws(token)   // valida firma; lanza excepcion si fue alterado
+            .getBody();
+}
+
+public Boolean validateToken(String token, UserDetails userDetails) {
+    try {
+        final String username = getUsernameFromToken(token);
+        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+    } catch (SecurityException | MalformedJwtException e) {
+        logger.error("Firma JWT invalida: {}", e.getMessage());
+    } catch (ExpiredJwtException e) {
+        logger.error("El token JWT ha expirado: {}", e.getMessage());
+    }
+    return false;
+}
+\end{lstlisting}
+
+\begin{lstlisting}[style=javastyle,caption={Autorización por rol a nivel de método (UserController.java)}]
+@GetMapping
+@PreAuthorize("hasRole('ADMIN')")
+public ResponseEntity<List<UserResponse>> getAllUsers() { /* ... */ }
+
+@DeleteMapping("/{id}")
+@PreAuthorize("hasRole('ADMIN')")
+public ResponseEntity<Void> deleteUser(@PathVariable Long id) { /* ... */ }
+\end{lstlisting}
+
+\begin{lstlisting}[style=javastyle,caption={Reglas de autorización por ruta (SecurityConfig.java)}]
+.authorizeHttpRequests(auth -> auth
+        .requestMatchers("/v1/auth/admin", "/v1/auth/student").permitAll()
+        .requestMatchers("/v1/users/register").permitAll()
+        .requestMatchers("/api/actuator/health", "/v1/health").permitAll()
+        .anyRequest().authenticated()
+);
+http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+\end{lstlisting}
+
+\subsection{3. Validación de tipo --- \Cumple}
+
+\textbf{Estado:} \Cumple. Todos los cuerpos de petición se deserializan a \emph{records} de Java con campos fuertemente tipados (\texttt{\seqsplit{String}}, \texttt{\seqsplit{Integer}}, \texttt{\seqsplit{Boolean}}, \texttt{\seqsplit{Long}}); si el JSON entrante trae un tipo incompatible (por ejemplo, una cadena donde se espera un booleano), Jackson lanza \texttt{\seqsplit{InvalidFormatException}}, capturada por \texttt{\seqsplit{GlobalExceptionHandler}} y traducida a un HTTP 400 con el nombre del campo y el tipo esperado.
+
+\textbf{Dónde se cumple:}
+\begin{itemize}[leftmargin=1.2cm,nosep]
+\item \texttt{\seqsplit{GlobalExceptionHandler.java}}
+\end{itemize}
+
+\begin{lstlisting}[style=javastyle,caption={Manejo de tipo de dato incorrecto en el cuerpo JSON (GlobalExceptionHandler.java)}]
+@ExceptionHandler(HttpMessageNotReadableException.class)
+public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
+    String detailMsg = "El formato de los datos enviados es incorrecto o el JSON esta mal formado.";
+    Throwable cause = ex.getCause();
+    if (cause instanceof InvalidFormatException ife) {
+        if (!ife.getPath().isEmpty()) {
+            String fieldName = ife.getPath().get(0).getFieldName();
+            String targetType = ife.getTargetType().getSimpleName();
+            detailMsg = "Tipo de dato incorrecto, el campo '" + fieldName
+                    + "' debe ser de tipo " + targetType + ".";
+        }
+    }
+    ErrorItem errorItem = ErrorItem.builder()
+            .status("400").code("ERR_BAD_REQUEST_FORMAT")
+            .title("Bad Request Format").detail(detailMsg).build();
+    return new ResponseEntity<>(ErrorResponse.builder().errors(List.of(errorItem)).build(),
+            HttpStatus.BAD_REQUEST);
+}
+\end{lstlisting}
+
+\subsection{4. Lógica de negocio --- \Cumple}
+
+\textbf{Estado:} \Cumple. \texttt{\seqsplit{UserServiceImpl}} aplica las reglas de negocio del dominio antes de persistir: un estudiante no puede registrarse dos veces con el mismo usuario/correo/CURP, y toda referencia a un catálogo (perfil, municipio, estado) debe existir.
+
+\textbf{Dónde se cumple:}
+\begin{itemize}[leftmargin=1.2cm,nosep]
+\item \texttt{\seqsplit{UserServiceImpl.java}}
+\end{itemize}
+
+\begin{lstlisting}[style=javastyle,caption={Reglas de negocio de registro de estudiante (UserServiceImpl.java)}]
+public StudentResponse registerStudent(StudentRequest request) {
+    String username = request.person().curp().toLowerCase();
+
+    if (userRepository.existsByUsername(username)) {
+        throw new BadRequestException("Student is already registered (username already exists).");
+    }
+    if (userRepository.existsByEmail(request.email())) {
+        throw new BadRequestException("El correo electronico ya esta registrado.");
+    }
+    if (personRepository.existsByCurp(request.person().curp())) {
+        throw new BadRequestException("El CURP proporcionado ya esta registrado en el sistema.");
+    }
+    if (request.profile() != null) {
+        ensureExists(profileRepository, request.profile().longValue(), "Perfil");
+    }
+    if (request.address() != null && request.address().municipalityId() != null) {
+        ensureExists(municipalityRepository, request.address().municipalityId().longValue(), "Municipio");
+    }
+    // ...
+}
+
+private <T> void ensureExists(JpaRepository<T, Long> repository, Long id, String entityName) {
+    if (id != null && !repository.existsById(id)) {
+        throw new ResourceNotFoundException(
+            "El " + entityName + " proporcionado (" + id + ") no existe en el catalogo.");
+    }
+}
+\end{lstlisting}
+
+\subsection{8c. Validación de tipo de datos (estructuras JSON) --- \Cumple}
+
+\textbf{Estado:} \Cumple. La validación en cascada de \texttt{\seqsplit{@Valid}} permite que estructuras JSON anidadas (objeto \texttt{\seqsplit{person}} dentro de \texttt{\seqsplit{StudentRequest}}, con su propia lista de \texttt{\seqsplit{relatives}}) se validen recursivamente en un único paso declarativo, sin código manual de recorrido.
+
+\textbf{Dónde se cumple:}
+\begin{itemize}[leftmargin=1.2cm,nosep]
+\item \texttt{\seqsplit{StudentRequest.java}}
+\end{itemize}
+
+\begin{lstlisting}[style=javastyle,caption={Validación en cascada sobre estructuras JSON anidadas (StudentRequest.java)}]
+public record StudentRequest(
+
+    @Valid
+    @NotNull(message = "Personal data is mandatory")
+    PersonRequest person,
+
+    @Valid
+    @NotNull(message = "Address is mandatory")
+    AddressRequest address,
+
+    @Valid
+    @NotNull(message = "Relatives list is mandatory")
+    List<RelativeRequest> relatives,
+
+    @NotNull(message = "Profile is mandatory")
+    Integer profile,
+
+    @NotBlank(message = "Email is mandatory")
+    String email
+) {}
+\end{lstlisting}
+
+\subsection{8f. Uso de funciones y librerías seguras (ORM) --- \Cumple}
+
+\textbf{Estado:} \Cumple. Ningún repositorio del proyecto usa \texttt{\seqsplit{@Query}} con SQL nativo ni concatenación de cadenas: todas las consultas son métodos derivados de \texttt{\seqsplit{JpaRepository}}, resueltos por Hibernate en sentencias preparadas con parámetros ligados. Esto elimina la clase de inyección SQL clásica en la capa de acceso a datos tal como está escrita hoy.
+
+\textbf{Dónde se cumple:}
+\begin{itemize}[leftmargin=1.2cm,nosep]
+\item \texttt{\seqsplit{PersonRepository.java}}
+\item \texttt{\seqsplit{UserRepository.java}}
+\end{itemize}
+
+\begin{lstlisting}[style=javastyle,caption={Consultas 100 porciento parametrizadas vía Spring Data JPA (PersonRepository.java)}]
+@Repository
+public interface PersonRepository extends JpaRepository<Person, Long> {
+    boolean existsByCurp(String curp);   // -> SELECT ... WHERE curp = ?  (parametro ligado)
+    Optional<Person> findByCurp(String curp);
+}
+\end{lstlisting}
+
+\subsection{8i. Escape de salida contextual (JSON) --- \Cumple}
+
+\textbf{Estado:} \Cumple. Toda respuesta se serializa con Jackson (\texttt{\seqsplit{com.fasterxml.jackson.databind.ObjectMapper}}), que escapa automáticamente comillas, barras invertidas y caracteres de control al producir el cuerpo JSON de salida, evitando que un valor persistido con comillas o caracteres especiales rompa la estructura de la respuesta. No hay generación manual de HTML/JS en el servidor, por lo que no aplica el escapado de esos contextos (ver Sección~\ref{sec:backend-noaplica}).
+
+\textbf{Dónde se cumple:} todos los \texttt{\seqsplit{@RestController}} del proyecto (serialización automática vía \texttt{\seqsplit{spring-boot-starter-web}} / Jackson).
+
+\subsection{9. Uso de librerías y frameworks de validación --- \Cumple}
+
+\textbf{Estado:} \Cumple. Toda la validación declarativa usa \textbf{Jakarta Bean Validation}, un estándar de la plataforma Java (JSR 380) implementado por \textbf{Hibernate Validator}, ambos mantenidos activamente y ampliamente auditados; no existe ningún validador propio ni ad-hoc en el backend (a diferencia del cliente, que sí construyó un módulo propio por no depender de librerías externas en la lógica de seguridad de una app sin servidor).
+
+\textbf{Dónde se cumple:}
+\begin{itemize}[leftmargin=1.2cm,nosep]
+\item \texttt{\seqsplit{pom.xml}}
+\item DTOs listados en la Sección~\ref{ssec:backend-tipos}
+\end{itemize}
+
+\begin{lstlisting}[style=xmlstyle,caption={Dependencia que habilita Jakarta Bean Validation / Hibernate Validator (pom.xml)}]
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-validation</artifactId>
+</dependency>
+\end{lstlisting}
+
+\subsection{11. Gestión de errores adecuada --- \Cumple}
+
+\textbf{Estado:} \Cumple. \texttt{\seqsplit{GlobalExceptionHandler}} centraliza el manejo de excepciones y evita que el servidor filtre información sensible: los errores de validación (\texttt{\seqsplit{MethodArgumentNotValidException}}) devuelven \textbf{422} con un mensaje por campo; las violaciones de integridad de datos (\texttt{\seqsplit{DataIntegrityViolationException}}) devuelven \textbf{409} con un mensaje genérico (sin exponer la sentencia SQL ni el nombre de la restricción); y cualquier excepción no controlada cae en un manejador \texttt{\seqsplit{Exception.class}} que registra el detalle solo en el log del servidor y responde \textbf{500} con un mensaje genérico.
+
+\textbf{Dónde se cumple:}
+\begin{itemize}[leftmargin=1.2cm,nosep]
+\item \texttt{\seqsplit{GlobalExceptionHandler.java}}
+\end{itemize}
+
+\begin{lstlisting}[style=javastyle,caption={Traducción de errores de validación a HTTP 422, uno por campo (GlobalExceptionHandler.java)}]
+@ExceptionHandler(MethodArgumentNotValidException.class)
+public ResponseEntity<ErrorResponse> handleValidationErrors(MethodArgumentNotValidException ex) {
+    List<ErrorItem> errorItems = ex.getBindingResult().getFieldErrors().stream()
+            .map(error -> ErrorItem.builder()
+                    .status("422")
+                    .code("ERR_VAL_" + error.getField().toUpperCase())
+                    .title("Unprocessable Entity")
+                    .detail(error.getDefaultMessage())
+                    .source(ErrorSource.builder()
+                            .pointer("/data/attributes/" + error.getField()).build())
+                    .build())
+            .collect(Collectors.toList());
+    return new ResponseEntity<>(ErrorResponse.builder().errors(errorItems).build(),
+            HttpStatus.UNPROCESSABLE_ENTITY);
+}
+
+@ExceptionHandler(Exception.class)
+public ResponseEntity<ErrorResponse> handleGeneralException(Exception ex) {
+    logger.error("Error no controlado del sistema: ", ex);  // detalle solo en el log del servidor
+    ErrorItem errorItem = ErrorItem.builder()
+            .status("500").code("ERR_INTERNAL_SERVER").title("Internal Server Error")
+            .detail("Ocurrio un error interno en el servidor. Por favor, intente mas tarde.")
+            .build();
+    return new ResponseEntity<>(ErrorResponse.builder().errors(List.of(errorItem)).build(),
+            HttpStatus.INTERNAL_SERVER_ERROR);
+}
+\end{lstlisting}
+
+\section{Backend: Apartados Parciales}
+\label{sec:backend-parcial}
+
+\subsection{5. Patrones y reglas específicas --- \Parcial}
+
+\textbf{Estado:} \Parcial. El correo electrónico se valida con \texttt{\seqsplit{@Email}} en \texttt{\seqsplit{RegisterRequest}} (\texttt{\seqsplit{@NotBlank}}, \texttt{\seqsplit{@Email}}, \texttt{\seqsplit{@Size}}), y la contraseña valida longitud mínima y máxima.
+
+\textbf{Dónde se cumple:}
+\begin{itemize}[leftmargin=1.2cm,nosep]
+\item \texttt{\seqsplit{RegisterRequest.java}}
+\end{itemize}
+
+\textbf{Por qué es parcial:} \texttt{\seqsplit{StudentRequest.email}} solo tiene \texttt{\seqsplit{@NotBlank}} (sin \texttt{\seqsplit{@Email}}), por lo que un correo mal formado puede pasar por la ruta de registro de estudiante; y la contraseña no exige \texttt{\seqsplit{@Pattern}} de mezcla de mayúsculas/números/símbolos, solo longitud (\texttt{\seqsplit{@Size(min = 6, max = 100)}}). No aplica Luhn de tarjetas porque el dominio no maneja pagos.
+
+\textbf{Recomendación:} añadir \texttt{\seqsplit{@Email}} a \texttt{\seqsplit{StudentRequest.email}} y una \texttt{\seqsplit{@Pattern}} de complejidad mínima de contraseña.
+
+\subsection{7. Validación contextual --- \Parcial}
+
+\textbf{Estado:} \Parcial. \texttt{\seqsplit{ensureExists}} valida que un \texttt{\seqsplit{municipalityId}} y un \texttt{\seqsplit{stateId}} existan en sus catálogos antes de persistir.
+
+\textbf{Dónde se cumple:}
+\begin{itemize}[leftmargin=1.2cm,nosep]
+\item \texttt{\seqsplit{UserServiceImpl.java}}
+\end{itemize}
+
+\textbf{Por qué es parcial:} la verificación es \emph{individual} por campo; no comprueba que el municipio efectivamente pertenezca al estado enviado (validación cruzada contextual entre ambos campos).
+
+\textbf{Recomendación:} extender \texttt{\seqsplit{ensureExists}} o agregar una comprobación específica \texttt{\seqsplit{municipalityBelongsToState(municipalityId, stateId)}}.
+
+\subsection{8b. Filtrado (allowlist/blacklist) --- \Parcial}
+
+\textbf{Estado:} \Parcial. Los DTO usan Bean Validation para exigir formato en algunos campos (\texttt{\seqsplit{@Email}}).
+
+\textbf{Dónde se cumple:}
+\begin{itemize}[leftmargin=1.2cm,nosep]
+\item \texttt{\seqsplit{RegisterRequest.java}}
+\end{itemize}
+
+\textbf{Por qué es parcial:} no hay una \texttt{\seqsplit{@Pattern}} de \emph{allowlist} de caracteres para campos de texto libre como \texttt{\seqsplit{username}}, \texttt{\seqsplit{nombre}} de catálogos o \texttt{\seqsplit{descripcion}} de rol (columna \texttt{\seqsplit{TEXT}} sin restricción), a diferencia del cliente que sí define un allowlist ASCII explícito (\texttt{\seqsplit{printableAscii}}).
+
+\textbf{Recomendación:} agregar \texttt{\seqsplit{@Pattern}} a \texttt{\seqsplit{username}} y evaluar longitud máxima para \texttt{\seqsplit{RoleRequestDTO.descripcion}}.
+
+\subsection{8d. Limpieza de entradas (trim/normalize) --- \Parcial}
+
+\textbf{Estado:} \Parcial. Existe normalización puntual: \texttt{\seqsplit{request.person().curp().toLowerCase()}} construye el \texttt{\seqsplit{username}} en minúsculas.
+
+\textbf{Dónde se cumple:}
+\begin{itemize}[leftmargin=1.2cm,nosep]
+\item \texttt{\seqsplit{UserServiceImpl.java}}
+\end{itemize}
+
+\textbf{Por qué es parcial:} \texttt{\seqsplit{@NotBlank}} rechaza cadenas vacías o compuestas solo por espacios, pero \textbf{no recorta} espacios al inicio/fin de una cadena válida antes de persistirla (por ejemplo, \texttt{\seqsplit{" admin "}} pasa la validación y se guarda con espacios).
+
+\textbf{Recomendación:} aplicar \texttt{\seqsplit{.strip()}} a los campos de texto en el servicio, o un deserializador Jackson que recorte espacios globalmente.
+
+\subsection{8j. Revisiones y auditorías (SAST/pentest) --- \Parcial}
+
+\textbf{Estado:} \Parcial. El código se revisó manualmente para este informe (anotaciones de validación, manejo de excepciones, configuración de seguridad).
+
+\textbf{Por qué es parcial:} a diferencia del cliente (que sí tiene \texttt{\seqsplit{.github/workflows/security.yml}} con \texttt{\seqsplit{flutter analyze}}, \texttt{\seqsplit{osv-scanner}} y \texttt{\seqsplit{gitleaks}}), el backend \textbf{no tiene todavía} pipeline de CI ni herramienta de análisis estático (no hay \texttt{\seqsplit{spotbugs}}, \texttt{\seqsplit{checkstyle}} ni \texttt{\seqsplit{sonar}} configurados en \texttt{\seqsplit{pom.xml}}), y \texttt{\seqsplit{src/test/java}} está vacío --- no hay pruebas unitarias ni de integración que verifiquen automáticamente estas reglas de validación.
+
+\textbf{Recomendación:} agregar un workflow de GitHub Actions equivalente al del cliente (\texttt{\seqsplit{mvn verify}}, \texttt{\seqsplit{spotbugs}}, \texttt{\seqsplit{osv-scanner}}, \texttt{\seqsplit{gitleaks}}) y una primera batería de pruebas \texttt{\seqsplit{@WebMvcTest}}/\texttt{\seqsplit{MockMvc}} que ejerciten los DTO documentados en la Sección~\ref{ssec:backend-tipos}.
+
+\section{Backend: Apartados No aplica (justificados)}
+\label{sec:backend-noaplica}
+
+\begin{description}[leftmargin=1.4cm,style=nextline]
+\item[1. Validación del lado del cliente] \textbf{Estado:} \NoAplica\ para este componente. \textbf{Por qué no aplica:} es responsabilidad exclusiva del cliente móvil, ya documentada en la Sección~\ref{sec:cliente-desarrollo}.
+\item[6. Validación cruzada (fechas/campos generales)] \textbf{Estado:} \NoAplica. \textbf{Por qué no aplica:} ningún DTO actual expone pares de campos tipo "fecha inicio/fecha fin"; el único caso de coherencia entre campos identificado (municipio/estado) se documenta como \Parcial\ en la Sección~\ref{sec:backend-parcial}.
+\item[8a. Escapado HTML/JS/SQL] \textbf{Estado:} \NoAplica. \textbf{Por qué no aplica:} el backend no genera HTML ni JavaScript (es una API JSON pura); el escapado SQL se resuelve estructuralmente vía JPA/Hibernate (ver 8f, \Cumple), no por escapado manual de caracteres.
+\item[8e. Codificación de entradas (Base64/URL)] \textbf{Estado:} \NoAplica. \textbf{Por qué no aplica:} ningún endpoint recibe payloads binarios en Base64; la decodificación URL de parámetros de ruta/consulta la resuelve el propio contenedor de servlets de forma transparente.
+\item[8g. Reemplazo de caracteres] \textbf{Estado:} \NoAplica. \textbf{Por qué no aplica:} no hay generación de HTML/SQL manual que requiera sustituir comillas o etiquetas de script.
+\item[8h. Canonicalización de rutas de archivo] \textbf{Estado:} \NoAplica. \textbf{Por qué no aplica:} el backend no construye rutas de sistema de archivos a partir de datos de usuario; el único acceso a \texttt{\seqsplit{classpath}} (\texttt{\seqsplit{FirebaseConfig}}) usa un recurso fijo y no controlado por el cliente.
+\item[10. Educación y capacitación] \textbf{Estado:} \NoAplica. \textbf{Por qué no aplica:} no evidenciable desde el repositorio (igual criterio que en el documento del cliente).
+\end{description}
+
+\section{Backend: Hallazgos de seguridad y recomendaciones}
+
+Durante la elaboración de este informe se identificaron los siguientes hallazgos, adicionales a los ya cubiertos como apartados \Parcial. Se documentan con severidad orientativa y no implican necesariamente una corrección ya aplicada.
+
+\begin{longtable}{p{4.9cm}p{2cm}p{6.3cm}}
+\toprule
+\textbf{Hallazgo} & \textbf{Severidad} & \textbf{Detalle / recomendación} \\
+\midrule
+\endhead
+Campos sin cota de longitud alineada con la base de datos (\texttt{\seqsplit{curp}}, \texttt{\seqsplit{zipCode}}, \texttt{\seqsplit{imageUrl}}) & Media & \texttt{\seqsplit{PersonRequest.curp}} no tiene \texttt{\seqsplit{@Size(max=18)}} pese a que la columna es \texttt{\seqsplit{VARCHAR(18)}}; una entrada más larga falla como \texttt{\seqsplit{DataIntegrityViolationException}} (409 genérico) en vez de un 422 claro por campo. Agregar \texttt{\seqsplit{@Size}} espejo de cada \texttt{\seqsplit{@Column(length=...)}}. \\
+\texttt{\seqsplit{ApiKeyFilter}} inyectado pero no registrado en la cadena de seguridad & Media & \texttt{\seqsplit{SecurityConfig}} declara \texttt{\seqsplit{@Autowired ApiKeyFilter}} pero nunca lo añade con \texttt{\seqsplit{http.addFilterBefore(...)}}; el filtro igual se activa globalmente por ser un \texttt{\seqsplit{@Component}}/\texttt{\seqsplit{OncePerRequestFilter}} auto-registrado por Spring Boot. Documentar explícitamente esta doble vía de activación o integrarlo formalmente a \texttt{\seqsplit{SecurityFilterChain}}. \\
+Clave de API no está realmente hasheada & Media & El campo \texttt{\seqsplit{keyHash}} y el método \texttt{\seqsplit{findByKeyHash}} sugieren un hash, pero se compara y almacena el valor generado (\texttt{\seqsplit{UUID.randomUUID()}} concatenado) en texto plano. Aplicar una función de hash (p. ej. SHA-256) antes de persistir y comparar. \\
+Valores por defecto de secretos en \texttt{\seqsplit{application.yml}} & Media & \texttt{\seqsplit{JWT\_SECRET}}, la contraseña de base de datos y \texttt{\seqsplit{ENCRYPTION\_SECRET}} tienen valores de respaldo con apariencia real hardcodeados en el archivo versionado. Aunque están pensados para sobrescribirse por variable de entorno, se recomienda usar un gestor de secretos y no comprometer valores plausibles en el repositorio. \\
+Sin límite de tasa (\emph{rate limiting}) ni CAPTCHA en endpoints públicos & Baja/Media & \texttt{\seqsplit{/v1/auth/admin}}, \texttt{\seqsplit{/v1/auth/student}} y \texttt{\seqsplit{/v1/users/register}} son públicos y no tienen control de fuerza bruta ni de registro masivo. Evaluar Bucket4j/resilience4j o un límite a nivel de proxy. \\
+Sin cota de tamaño de \texttt{\seqsplit{Pageable.size}} en peticiones GET & Baja & No se configuró \texttt{\seqsplit{spring.data.web.pageable.max-page-size}}; aplica el máximo por defecto de Spring Boot (2000), lo que permite solicitar páginas grandes. Fijar un máximo explícito acorde al catálogo más grande. \\
+\bottomrule
+\end{longtable}
+
+\section{Backend: Tabla Resumen de Cumplimiento}
+
+\begin{longtable}{p{0.5cm}p{4cm}p{2.6cm}p{6.2cm}}
+\toprule
+\textbf{\#} & \textbf{Apartado} & \textbf{Estado} & \textbf{Evidencia} \\
+\midrule
+\endhead
+1 & Validación cliente & \NoAplica & Responsabilidad del cliente móvil \\
+2 & Validación servidor & \Cumple & \texttt{\seqsplit{JwtUtil.java}}, \texttt{\seqsplit{SecurityConfig.java}} \\
+3 & Validación de tipo & \Cumple & \texttt{\seqsplit{GlobalExceptionHandler.java}} (Jackson) \\
+4 & Lógica de negocio & \Cumple & \texttt{\seqsplit{UserServiceImpl.java}} \\
+5 & Patrones (email/contraseña) & \Parcial & \texttt{\seqsplit{RegisterRequest.java}} vs. \texttt{\seqsplit{StudentRequest.java}} \\
+6 & Validación cruzada & \NoAplica & Sin pares fecha inicio/fin en el dominio \\
+7 & Validación contextual & \Parcial & \texttt{\seqsplit{ensureExists}} (sin cruce municipio/estado) \\
+8a & Escapado HTML/JS/SQL & \NoAplica & API JSON pura; SQL resuelto por JPA \\
+8b & Filtrado (allowlist) & \Parcial & Sin \texttt{\seqsplit{@Pattern}} en texto libre \\
+8c & Validación tipo JSON & \Cumple & \texttt{\seqsplit{StudentRequest.java}} (cascada \texttt{\seqsplit{@Valid}}) \\
+8d & Limpieza (trim/normalize) & \Parcial & \texttt{\seqsplit{@NotBlank}} no recorta espacios \\
+8e & Codificación & \NoAplica & Sin payloads Base64; URL decoding del contenedor \\
+8f & Librerías seguras / ORM & \Cumple & \texttt{\seqsplit{PersonRepository.java}} (JPA parametrizado) \\
+8g & Reemplazo de caracteres & \NoAplica & Sin generación manual de HTML/SQL \\
+8h & Canonicalización & \NoAplica & Sin manejo de rutas de archivo de usuario \\
+8i & Escape de salida & \Cumple & Serialización JSON vía Jackson \\
+8j & Revisiones/auditorías & \Parcial & Sin CI ni pruebas automatizadas todavía \\
+9 & Librerías de validación & \Cumple & \texttt{\seqsplit{spring-boot-starter-validation}} \\
+10 & Educación/capacitación & \NoAplica & No evidenciable desde el repositorio \\
+11 & Gestión de errores & \Cumple & \texttt{\seqsplit{GlobalExceptionHandler.java}} \\
+\bottomrule
+\end{longtable}
+
+\noindent\textbf{Conteo final (20 apartados, Backend):} \Cumple\ = \textbf{8} (2, 3, 4, 8c, 8f, 8i, 9, 11) \quad \Parcial\ = \textbf{5} (5, 7, 8b, 8d, 8j) \quad \NoAplica\ = \textbf{7} (1, 6, 8a, 8e, 8g, 8h, 10) \quad \Fuera\ = 0 \quad \NoCumple\ = 0.
+
+\section{Tabla Consolidada: Cliente vs. Backend}
+
+La siguiente tabla cruza el estado de cada apartado en ambos componentes, mostrando cómo el backend cierra la mayoría de los apartados que el cliente había dejado \Fuera\ de su alcance.
+
+\begin{longtable}{p{0.5cm}p{4cm}p{2.3cm}p{2.3cm}p{5cm}}
+\toprule
+\textbf{\#} & \textbf{Apartado} & \textbf{Cliente} & \textbf{Backend} & \textbf{Lectura combinada} \\
+\midrule
+\endhead
+1 & Validación cliente & \Cumple & \NoAplica & Cubierto en el cliente \\
+2 & Validación servidor & \Fuera & \Cumple & Cerrado por el backend (JWT + roles) \\
+3 & Validación de tipo & \Cumple & \Cumple & Cubierto en ambas capas \\
+4 & Lógica de negocio & \Cumple & \Cumple & Cubierto en ambas capas \\
+5 & Patrones específicos & \NoAplica & \Parcial & Solo relevante en backend; falta uniformar \texttt{\seqsplit{@Email}} \\
+6 & Validación cruzada & \NoAplica & \NoAplica & No aplica en ninguna capa hoy \\
+7 & Validación contextual & \Cumple & \Parcial & Backend pendiente de cruce municipio/estado \\
+8a & Escapado HTML/JS/SQL & \NoAplica & \NoAplica & No aplica en ninguna capa \\
+8b & Filtrado (allowlist) & \Cumple & \Parcial & Backend sin \texttt{\seqsplit{@Pattern}} de texto libre \\
+8c & Validación tipo JSON & \Cumple & \Cumple & Cubierto en ambas capas \\
+8d & Limpieza (trim/normalize) & \Cumple & \Parcial & Backend no recorta espacios \\
+8e & Codificación & \NoAplica & \NoAplica & No aplica en ninguna capa \\
+8f & Librerías seguras / ORM & \Cumple & \Cumple & Cubierto en ambas capas \\
+8g & Reemplazo de caracteres & \NoAplica & \NoAplica & No aplica en ninguna capa \\
+8h & Canonicalización & \Cumple & \NoAplica & Solo relevante en cliente (URLs de medios) \\
+8i & Escape de salida & \NoAplica & \Cumple & Solo relevante en backend (serialización JSON) \\
+8j & Revisiones/auditorías & \Parcial & \Parcial & Pendiente en ambas capas (backend más atrás: sin CI) \\
+9 & Librerías de validación & \Cumple & \Cumple & Cubierto en ambas capas \\
+10 & Educación/capacitación & \NoAplica & \NoAplica & No evidenciable en ninguna capa \\
+11 & Gestión de errores & \Cumple & \Cumple & Cubierto en ambas capas \\
+\bottomrule
+\end{longtable}
+
+\section{Conclusiones Generales (Cliente + Backend)}
+
+El cliente móvil llegó a un estado conforme: 11 apartados en \Cumple, 1 en \Parcial\ (8j) y 0 en \NoCumple, tras cerrarse las brechas de mayor severidad bajo su control (token cifrado, logs sin secretos, entrada externa validada).
+
+El backend, evaluado por primera vez en este informe, cubre \textbf{8 apartados en \Cumple}, incluyendo exactamente el que el cliente había dejado \Fuera\ de su alcance (validación del lado del servidor, mediante verificación criptográfica de JWT y autorización por rol). Quedan \textbf{5 apartados en \Parcial}, todos con una acción concreta y acotada: uniformar \texttt{\seqsplit{@Email}} entre \texttt{\seqsplit{RegisterRequest}} y \texttt{\seqsplit{StudentRequest}}, cruzar municipio/estado, añadir \texttt{\seqsplit{@Pattern}} de allowlist a texto libre, recortar espacios en cadenas, y --- el más relevante para la madurez del proyecto --- incorporar un pipeline de CI con pruebas automatizadas y análisis estático, tal como ya existe en el repositorio del cliente.
+
+\textbf{Riesgos abiertos, externos a la validación de entradas:} (1) TLS/HTTPS en los servicios de evaluación (infraestructura, severidad Alta, ya documentado en la Sección~4.2); (2) la clave de API no está realmente hasheada y se transmite en texto plano vía FCM; (3) valores de secretos con apariencia real en \texttt{\seqsplit{application.yml}}; (4) ausencia de límite de tasa en los endpoints públicos de autenticación y autorregistro.
+
+\textbf{Recomendaciones priorizadas:} (1) agregar pruebas \texttt{\seqsplit{MockMvc}} y un workflow de CI al backend; (2) uniformar las anotaciones de Bean Validation faltantes (\texttt{\seqsplit{@Email}}, \texttt{\seqsplit{@Size}} espejo de \texttt{\seqsplit{@Column}}, \texttt{\seqsplit{@Pattern}} de allowlist); (3) hashear la clave de API y formalizar su registro en \texttt{\seqsplit{SecurityFilterChain}}; (4) mover los secretos de \texttt{\seqsplit{application.yml}} a un gestor dedicado; (5) una vez exista TLS en los servicios de evaluación, aplicar \emph{certificate pinning} en el cliente y forzar HTTPS.
+
+\end{document}
