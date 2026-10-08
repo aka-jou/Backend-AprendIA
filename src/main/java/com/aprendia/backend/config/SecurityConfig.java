@@ -81,9 +81,6 @@ public class SecurityConfig {
                         // Login OTP passwordless (paso 1: enviar código, paso 2: verificar)
                         .requestMatchers("/v1/auth/otp/send", "/v1/auth/otp/verify").permitAll()
 
-                        // Registro de usuarios público (no requiere token)
-                        .requestMatchers("/v1/users/register").permitAll()
-
                         // Swagger UI y OpenAPI docs públicos
                         .requestMatchers(
                                 new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/api/swagger-ui/**"),

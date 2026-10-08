@@ -175,8 +175,8 @@ public class OtpServiceImpl implements OtpService {
                 .nombre(nombre)
                 .username(user.getUsername())
                 .roles(roles)
-                // TODO: el modelo actual no vincula usuario con dependencia/entidad (pendiente del DDL de la spec)
-                .idEntidad(null)
+                // idEntidad = dependencia de adscripción del usuario (users.dependency_id)
+                .idEntidad(user.getDependency() != null ? user.getDependency().getId() : null)
                 .build();
     }
 

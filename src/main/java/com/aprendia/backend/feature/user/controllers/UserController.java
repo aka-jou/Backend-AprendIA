@@ -1,111 +1,77 @@
 package com.aprendia.backend.feature.user.controllers;
 
-import com.aprendia.backend.feature.user.dto.StudentRequest;
-import com.aprendia.backend.feature.user.dto.StudentResponse;
-import com.aprendia.backend.feature.user.dto.UserResponse;
+import com.aprendia.backend.common.dto.ApiResponse;
 import com.aprendia.backend.common.dto.PagedResponse;
+import com.aprendia.backend.common.response.ApiMessage;
+import com.aprendia.backend.feature.user.dto.UserCreateRequestDTO;
+import com.aprendia.backend.feature.user.dto.UserDetailDTO;
+import com.aprendia.backend.feature.user.dto.UserSummaryDTO;
+import com.aprendia.backend.feature.user.dto.UserUpdateRequestDTO;
 import com.aprendia.backend.feature.user.service.UserService;
-import com.aprendia.backend.feature.user.dto.RegisterRequest;
-import com.aprendia.backend.feature.user.dto.StudentDto;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import io.swagger.v3.oas.annotations.security.SecurityRequirements;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springdoc.core.annotations.ParameterObject;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/v1/users")
-@Tag(name = "Usuarios", description = "Endpoints para la consulta y administración de perfiles de usuario. Requieren JWT.")
+@Tag(name = "Usuarios", description = "Personal docente, asesores, supervisores y administradores (Especificación v2.0, Módulo 2). Requieren JWT y rol ADMINISTRADOR.")
 public class UserController {
 
     @Autowired
     private UserService userService;
 
     @GetMapping
-    @Operation(summary = "Obtener todos los usuarios", description = "Devuelve una lista completa de los usuarios registrados. Requiere rol de administrador.")
     @PreAuthorize("hasRole('ADMINISTRADOR')")
-    public ResponseEntity<List<UserResponse>> getAllUsers() {
-        List<UserResponse> users = userService.getAllUsers();
-        return ResponseEntity.ok(users);
+    @ApiMessage("Usuarios recuperados exitosamente.")
+    @Operation(summary = "Listado paginado de usuarios",
+            description = "Parámetros: page (base 0), size (default 10), query (busca en usuario, correo, nombre o CURP exacta). Excluye estudiantes.")
+    public ResponseEntity<PagedResponse<UserSummaryDTO>> getUsers(
+            @Parameter(description = "Texto de búsqueda: nombre, correo, usuario o CURP completa")
+            @RequestParam(required = false) String query,
+            @ParameterObject @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+        return ResponseEntity.ok(userService.getUsers(query, pageable));
+    }
+
+    @PostMapping
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @ApiMessage("Usuario registrado exitosamente.")
+    @Operation(summary = "Registrar usuario", description = "Alta con persona, credenciales y asignación (roles y dependencia).")
+    public ResponseEntity<UserDetailDTO> createUser(@Valid @RequestBody UserCreateRequestDTO request) {
+        return new ResponseEntity<>(userService.createUser(request), HttpStatus.CREATED);
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Obtener usuario por ID", description = "Devuelve los detalles de un usuario en base a su ID. Requiere autenticación.")
-    public ResponseEntity<UserResponse> getUserById(@PathVariable Long id) {
-        UserResponse user = userService.getUserById(id);
-        return ResponseEntity.ok(user);
-    }
-
-
-    @GetMapping("/students")
-    @Operation(summary = "Obtener estudiantes", description = "Devuelve una lista paginada de estudiantes. Requiere rol ADMINISTRADOR.")
     @PreAuthorize("hasRole('ADMINISTRADOR')")
-    public ResponseEntity<PagedResponse<StudentDto>> getAllStudents(
-            @ParameterObject @PageableDefault(size = 100) Pageable pageable) {
-        Page<StudentDto> students = userService.getAllStudents(pageable);
-        return ResponseEntity.ok(PagedResponse.fromPage(students));
+    @ApiMessage("Usuario obtenido exitosamente.")
+    @Operation(summary = "Expediente y detalle completo del usuario")
+    public ResponseEntity<UserDetailDTO> getUserById(@PathVariable Long id) {
+        return ResponseEntity.ok(userService.getUserById(id));
     }
 
-    @GetMapping("/students/{id}")
-    @Operation(summary = "Obtener un estudiante por ID", description = "Retorna la información completa de un estudiante específico. Requiere rol ADMINISTRADOR.")
+    @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMINISTRADOR')")
-    public ResponseEntity<StudentDto> getStudentById(@PathVariable Long id) {
-        return ResponseEntity.ok(userService.getStudentById(id));
-    }
-
-    @PostMapping("/register")
-    @SecurityRequirements
-    @Operation(summary = "Registrar un nuevo usuario", description = "Crea una nueva cuenta de usuario con rol USER.")
-    public ResponseEntity<UserResponse> registerUser(@Valid @RequestBody RegisterRequest registerRequest) {
-        UserResponse response = userService.register(registerRequest);
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
-    }
-
-
-    @PostMapping("/students")
-    @Operation(summary = "Registrar estudiante", description = "Registra un estudiante con datos personales, domicilio y parientes. Requiere rol ADMINISTRADOR.")
-    @ApiResponses(value = {
-        @ApiResponse(responseCode = "201", description = "Estudiante registrado exitosamente."),
-        @ApiResponse(responseCode = "400", description = "Error de validación en datos de entrada."),
-        @ApiResponse(responseCode = "401", description = "No autenticado."),
-        @ApiResponse(responseCode = "403", description = "No tiene permisos suficientes."),
-        @ApiResponse(responseCode = "500", description = "Error inesperado.")
-    })
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
-    public ResponseEntity<StudentResponse> registerStudent(@Valid @RequestBody StudentRequest request) {
-        StudentResponse response = userService.registerStudent(request);
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
-    }
-
-
-    @Operation(summary = "Actualizar un estudiante", description = "Actualiza la información personal, dirección y familiares de un estudiante. Requiere rol ADMINISTRADOR.")
-    @PutMapping("/students/{id}")
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
-    public ResponseEntity<StudentDto> updateStudent(
-            @PathVariable Long id, 
-            @Valid @RequestBody StudentRequest request) {
-        return ResponseEntity.ok(userService.updateStudent(id, request));
+    @ApiMessage("Usuario actualizado exitosamente.")
+    @Operation(summary = "Actualizar datos personales, rol o estado",
+            description = "credentials es opcional; si password se omite, no cambia. status acepta 'Activo' o 'Inactivo'.")
+    public ResponseEntity<UserDetailDTO> updateUser(@PathVariable Long id, @Valid @RequestBody UserUpdateRequestDTO request) {
+        return ResponseEntity.ok(userService.updateUser(id, request));
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Eliminar un usuario", description = "Elimina de forma permanente un usuario por su ID. Requiere rol de administrador.")
     @PreAuthorize("hasRole('ADMINISTRADOR')")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
-        userService.deleteUser(id);
-        return ResponseEntity.noContent().build();
+    @Operation(summary = "Desactivar / dar de baja el acceso del usuario", description = "Baja lógica (is_active = false); el registro se conserva.")
+    public ResponseEntity<ApiResponse<Void>> deactivateUser(@PathVariable Long id) {
+        userService.deactivateUser(id);
+        return ResponseEntity.ok(ApiResponse.ok(null, "Usuario desactivado exitosamente."));
     }
-
 }

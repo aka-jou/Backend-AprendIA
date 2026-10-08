@@ -1,5 +1,6 @@
 package com.aprendia.backend.feature.user.entities;
 
+import com.aprendia.backend.feature.catalogs.entities.Dependency;
 import com.aprendia.backend.feature.catalogs.entities.Role;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -59,6 +60,10 @@ public class User {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "person_id")
     private Person person;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "dependency_id")
+    private Dependency dependency;
 
     @PrePersist
     protected void onCreate() {
