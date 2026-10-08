@@ -56,6 +56,9 @@ app:
     header: Authorization
     prefix: "Bearer "
   security:
+    api-key-rotation:
+      # "-" desactiva la rotación automática de API keys. Ej. trimestral: "0 0 0 1 1/3 ?"
+      cron: ${API_KEY_ROTATION_CRON:-}
     cors:
       allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173,http://localhost:8080,http://localhost:4200}
   encryption:

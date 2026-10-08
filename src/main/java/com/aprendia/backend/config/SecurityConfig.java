@@ -101,6 +101,9 @@ public class SecurityConfig {
                 );
 
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        // Capa 1 de la spec: X-API-KEY en el 100% de las peticiones (excepto preflight, Swagger y health).
+        // Corre después de CorsFilter (los 401 llevan cabeceras CORS) y antes del filtro JWT (capa 2).
+        http.addFilterBefore(apiKeyFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }
@@ -127,11 +130,9 @@ public class SecurityConfig {
 
     @Bean
     public FilterRegistrationBean<ApiKeyFilter> apiKeyFilterRegistration(ApiKeyFilter apiKeyFilter) {
-        // ApiKeyFilter es un @Component que extiende OncePerRequestFilter: Spring Boot lo auto-registra
-        // como filtro global del contenedor de servlets (todas las rutas), sin pasar por las reglas de
-        // permitAll() de este SecurityConfig. Aquí se desactiva ese auto-registro; si en el futuro se
-        // quiere validar API key en rutas concretas, se agrega explícitamente con
-        // http.addFilterBefore(apiKeyFilter, ...) dentro de filterChain(), igual que jwtAuthenticationFilter.
+        // ApiKeyFilter es un @Component: Spring Boot lo registraría además como filtro global del contenedor
+        // de servlets, fuera de Spring Security. Se desactiva ese registro porque el filtro ya corre dentro
+        // de la cadena de seguridad (ver filterChain).
         FilterRegistrationBean<ApiKeyFilter> registration = new FilterRegistrationBean<>(apiKeyFilter);
         registration.setEnabled(false);
         return registration;

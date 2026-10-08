@@ -1,5 +1,6 @@
 package com.aprendia.backend.security.service.impl;
 
+import com.aprendia.backend.security.crypto.ApiKeyHasher;
 import com.aprendia.backend.security.entities.ApiKey;
 import com.aprendia.backend.security.repository.ApiKeyRepository;
 import com.aprendia.backend.security.service.KeyRotationService;
@@ -22,7 +23,9 @@ public class KeyRotationServiceImpl implements KeyRotationService {
     private final ApiKeyRepository apiKeyRepository;
 
     @Override
-    @Scheduled(cron = "0 0 0 1 1/3 ?")
+    // Desactivada por defecto ("-"). Se activa con API_KEY_ROTATION_CRON, ej. "0 0 0 1 1/3 ?" (trimestral).
+    // Al rotar, TODAS las keys vigentes quedan obsoletas: los clientes deben recibir la nueva por FCM.
+    @Scheduled(cron = "${app.security.api-key-rotation.cron:-}")
     @Transactional
     public void rotateApiKey() {
         log.info("Starting scheduled API Key rotation...");
@@ -37,7 +40,7 @@ public class KeyRotationServiceImpl implements KeyRotationService {
                         UUID.randomUUID().toString().replace("-", "");
         
         ApiKey apiKey = ApiKey.builder()
-                .keyHash(newKey)
+                .keyHash(ApiKeyHasher.sha256Hex(newKey))   // en BD solo el hash; la key en claro solo viaja por FCM
                 .isDeprecated(false)
                 .createdAt(LocalDateTime.now())
                 .build();

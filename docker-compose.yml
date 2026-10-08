@@ -43,6 +43,9 @@ services:
       JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
       ENCRYPTION_SECRET: ${ENCRYPTION_SECRET:-aprendia_encryption_secret_key_2026}
       
+      # Rotación automática de API keys ("-" = desactivada)
+      API_KEY_ROTATION_CRON: ${API_KEY_ROTATION_CRON:--}
+
       # Correo y OTP
       MAIL_HOST: ${MAIL_HOST:-}
       MAIL_PORT: ${MAIL_PORT:-587}
