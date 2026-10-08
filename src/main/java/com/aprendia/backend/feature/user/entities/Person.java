@@ -50,4 +50,8 @@ public class Person {
 
     @Column(name = "image_url")
     private String imageUrl;
+
+    @Convert(converter = com.aprendia.backend.security.crypto.EncryptedStringConverter.class)
+    @Column(name = "ine_number", length = 255)
+    private String ineNumber;
 }

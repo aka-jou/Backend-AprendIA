@@ -8,6 +8,7 @@ import java.util.List;
 public interface ProfileService {
     ProfileResponseDTO createProfile(ProfileRequestDTO request);
     List<ProfileResponseDTO> getAllProfiles();
+    ProfileResponseDTO getProfileById(Long id);
     ProfileResponseDTO updateProfile(Long id, ProfileRequestDTO request);
     void deleteProfile(Long id);
 }

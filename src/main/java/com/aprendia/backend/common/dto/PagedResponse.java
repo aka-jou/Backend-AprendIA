@@ -1,39 +1,28 @@
 package com.aprendia.backend.common.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import org.springframework.data.domain.Page;
 
 import java.util.List;
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class PagedResponse<T> {
-    private List<T> content;
-    private PageableInfo pageable;
-    private long totalElements;
-    private int totalPages;
-    private boolean last;
-
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    public static class PageableInfo {
-        private int pageNumber;
-        private int pageSize;
-    }
-
+/**
+ * Estructura paginada que viaja dentro de {@code data} en los listados,
+ * según la Especificación Técnica v2.0 (sección 2.2):
+ * { "content": [...], "totalElements": 25, "totalPages": 3, "size": 10, "number": 0 }
+ */
+public record PagedResponse<T>(
+        List<T> content,
+        long totalElements,
+        int totalPages,
+        int size,
+        int number
+) {
     public static <T> PagedResponse<T> fromPage(Page<T> page) {
-        return PagedResponse.<T>builder()
-                .content(page.getContent())
-                .pageable(new PageableInfo(page.getNumber(), page.getSize()))
-                .totalElements(page.getTotalElements())
-                .totalPages(page.getTotalPages())
-                .last(page.isLast())
-                .build();
+        return new PagedResponse<>(
+                page.getContent(),
+                page.getTotalElements(),
+                page.getTotalPages(),
+                page.getSize(),
+                page.getNumber()
+        );
     }
 }

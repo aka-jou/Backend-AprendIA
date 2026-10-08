@@ -6,5 +6,6 @@ import lombok.Builder;
 public record ProfileResponseDTO(
     Long id,
     String nombre,
-    Integer nivelAcceso
+    String descripcion,
+    Boolean status
 ) {}

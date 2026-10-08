@@ -1,8 +1,9 @@
 package com.aprendia.backend.config;
 
+import com.aprendia.backend.common.response.ApiResponseWriter;
 import com.aprendia.backend.feature.auth.utils.JwtAuthenticationFilter;
 import com.aprendia.backend.security.filter.ApiKeyFilter;
-import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -36,6 +37,9 @@ public class SecurityConfig {
     @Autowired
     private com.aprendia.backend.security.filter.ApiKeyFilter apiKeyFilter;
 
+    @Autowired
+    private ApiResponseWriter apiResponseWriter;
+
     @Value("${app.security.cors.allowed-origins:http://localhost:3000,http://localhost:5173,http://localhost:8080,http://localhost:4200,https://45.85.249.128,http://45.85.249.128}")
     private String allowedOrigins;
 
@@ -56,13 +60,14 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
 
-                // Manejo de excepciones de entrada no autorizada
+                // 401 (sin token / token inválido) y 403 (sin rol suficiente) con el envelope estándar
                 .exceptionHandling(handling -> handling
-                        .authenticationEntryPoint((request, response, authException) -> {
-                            response.setContentType("application/json;charset=UTF-8");
-                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                            response.getWriter().write("{\"error\": \"Unauthorized\", \"message\": \"No autorizado para acceder a este recurso.\"}");
-                        })
+                        .authenticationEntryPoint((request, response, authException) ->
+                                apiResponseWriter.writeError(response, HttpStatus.UNAUTHORIZED,
+                                        "No autorizado para acceder a este recurso. Inicie sesión."))
+                        .accessDeniedHandler((request, response, accessDeniedException) ->
+                                apiResponseWriter.writeError(response, HttpStatus.FORBIDDEN,
+                                        "No tiene permisos para acceder a este recurso."))
                 )
 
                 // Sesiones sin estado
@@ -73,8 +78,8 @@ public class SecurityConfig {
                         // Rutas públicas de autenticación (login admin y student no requieren token)
                         .requestMatchers("/v1/auth/admin", "/v1/auth/student").permitAll()
 
-                        // Registro de usuarios público (no requiere token)
-                        .requestMatchers("/v1/users/register").permitAll()
+                        // Login OTP passwordless (paso 1: enviar código, paso 2: verificar)
+                        .requestMatchers("/v1/auth/otp/send", "/v1/auth/otp/verify").permitAll()
 
                         // Swagger UI y OpenAPI docs públicos
                         .requestMatchers(
@@ -96,6 +101,9 @@ public class SecurityConfig {
                 );
 
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        // Capa 1 de la spec: X-API-KEY en el 100% de las peticiones (excepto preflight, Swagger y health).
+        // Corre después de CorsFilter (los 401 llevan cabeceras CORS) y antes del filtro JWT (capa 2).
+        http.addFilterBefore(apiKeyFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }
@@ -122,11 +130,9 @@ public class SecurityConfig {
 
     @Bean
     public FilterRegistrationBean<ApiKeyFilter> apiKeyFilterRegistration(ApiKeyFilter apiKeyFilter) {
-        // ApiKeyFilter es un @Component que extiende OncePerRequestFilter: Spring Boot lo auto-registra
-        // como filtro global del contenedor de servlets (todas las rutas), sin pasar por las reglas de
-        // permitAll() de este SecurityConfig. Aquí se desactiva ese auto-registro; si en el futuro se
-        // quiere validar API key en rutas concretas, se agrega explícitamente con
-        // http.addFilterBefore(apiKeyFilter, ...) dentro de filterChain(), igual que jwtAuthenticationFilter.
+        // ApiKeyFilter es un @Component: Spring Boot lo registraría además como filtro global del contenedor
+        // de servlets, fuera de Spring Security. Se desactiva ese registro porque el filtro ya corre dentro
+        // de la cadena de seguridad (ver filterChain).
         FilterRegistrationBean<ApiKeyFilter> registration = new FilterRegistrationBean<>(apiKeyFilter);
         registration.setEnabled(false);
         return registration;

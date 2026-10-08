@@ -18,7 +18,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.stream.Collectors;
 
 @Service
 public class MunicipalityServiceImpl implements MunicipalityService {
@@ -50,26 +49,14 @@ public class MunicipalityServiceImpl implements MunicipalityService {
     @Transactional(readOnly = true)
     public PagedResponse<MunicipalityResponseDTO> getAllMunicipalities(Pageable pageable) {
         Page<Municipality> page = municipalityRepository.findAll(pageable);
-        return PagedResponse.<MunicipalityResponseDTO>builder()
-                .content(page.getContent().stream().map(this::mapToResponse).collect(Collectors.toList()))
-                .pageable(new PagedResponse.PageableInfo(page.getNumber(), page.getSize()))
-                .totalElements(page.getTotalElements())
-                .totalPages(page.getTotalPages())
-                .last(page.isLast())
-                .build();
+        return PagedResponse.fromPage(page.map(this::mapToResponse));
     }
 
     @Override
     @Transactional(readOnly = true)
     public PagedResponse<MunicipalityResponseDTO> getMunicipalitiesByStateId(Long stateId, Pageable pageable) {
         Page<Municipality> page = municipalityRepository.findByStateId(stateId, pageable);
-        return PagedResponse.<MunicipalityResponseDTO>builder()
-                .content(page.getContent().stream().map(this::mapToResponse).collect(Collectors.toList()))
-                .pageable(new PagedResponse.PageableInfo(page.getNumber(), page.getSize()))
-                .totalElements(page.getTotalElements())
-                .totalPages(page.getTotalPages())
-                .last(page.isLast())
-                .build();
+        return PagedResponse.fromPage(page.map(this::mapToResponse));
     }
 
     @Override

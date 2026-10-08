@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.stream.Collectors;
 
 @Service
 public class DependencyServiceImpl implements DependencyService {
@@ -41,13 +40,7 @@ public class DependencyServiceImpl implements DependencyService {
     @Transactional(readOnly = true)
     public PagedResponse<DependencyResponseDTO> getAllDependencies(Pageable pageable) {
         Page<Dependency> dependenciesPage = dependencyRepository.findAll(pageable);
-        return PagedResponse.<DependencyResponseDTO>builder()
-                .content(dependenciesPage.getContent().stream().map(this::mapToResponse).collect(Collectors.toList()))
-                .pageable(new PagedResponse.PageableInfo(dependenciesPage.getNumber(), dependenciesPage.getSize()))
-                .totalElements(dependenciesPage.getTotalElements())
-                .totalPages(dependenciesPage.getTotalPages())
-                .last(dependenciesPage.isLast())
-                .build();
+        return PagedResponse.fromPage(dependenciesPage.map(this::mapToResponse));
     }
 
     @Override

@@ -1,11 +1,15 @@
 package com.aprendia.backend.feature.user.entities;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.BatchSize;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "students")
@@ -35,4 +39,11 @@ public class Student {
 
     @OneToOne(mappedBy = "student", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private Address address;
+
+    // BatchSize: al listar una página se cargan los familiares de todos los alumnos en una sola consulta
+    @Builder.Default
+    @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("id ASC")
+    @BatchSize(size = 50)
+    private List<StudentRelative> relatives = new ArrayList<>();
 }

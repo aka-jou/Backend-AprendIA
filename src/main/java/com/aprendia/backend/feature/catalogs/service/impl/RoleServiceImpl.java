@@ -17,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.stream.Collectors;
 
 @Service
 public class RoleServiceImpl implements RoleService {
@@ -46,13 +45,7 @@ public class RoleServiceImpl implements RoleService {
     @Transactional(readOnly = true)
     public PagedResponse<RoleResponseDTO> getAllRoles(Pageable pageable) {
         Page<Role> rolesPage = roleRepository.findAll(pageable);
-        return PagedResponse.<RoleResponseDTO>builder()
-                .content(rolesPage.getContent().stream().map(this::mapToResponse).collect(Collectors.toList()))
-                .pageable(new PagedResponse.PageableInfo(rolesPage.getNumber(), rolesPage.getSize()))
-                .totalElements(rolesPage.getTotalElements())
-                .totalPages(rolesPage.getTotalPages())
-                .last(rolesPage.isLast())
-                .build();
+        return PagedResponse.fromPage(rolesPage.map(this::mapToResponse));
     }
 
     @Override

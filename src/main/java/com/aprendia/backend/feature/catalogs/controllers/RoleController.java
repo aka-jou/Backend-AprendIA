@@ -1,5 +1,6 @@
 package com.aprendia.backend.feature.catalogs.controllers;
 
+import com.aprendia.backend.common.dto.ApiResponse;
 import com.aprendia.backend.common.dto.PagedResponse;
 import com.aprendia.backend.feature.catalogs.dto.RoleRequestDTO;
 import com.aprendia.backend.feature.catalogs.dto.RoleResponseDTO;
@@ -17,40 +18,40 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/v1/catalogs/roles")
-@Tag(name = "Catálogo de Roles", description = "Endpoints para la administración del catálogo de roles del sistema. Requieren JWT y rol ADMIN.")
+@Tag(name = "Catálogo de Roles", description = "Endpoints para la administración del catálogo de roles del sistema. Requieren JWT y rol ADMINISTRADOR.")
 public class RoleController {
 
     @Autowired
     private RoleService roleService;
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Crear un rol", description = "Crea un nuevo rol en el sistema. Requiere rol ADMIN.")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @Operation(summary = "Crear un rol", description = "Crea un nuevo rol en el sistema. Requiere rol ADMINISTRADOR.")
     public ResponseEntity<RoleResponseDTO> createRole(@Valid @RequestBody RoleRequestDTO request) {
         RoleResponseDTO response = roleService.createRole(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Obtener roles", description = "Devuelve la lista paginada de roles. Requiere rol ADMIN.")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @Operation(summary = "Obtener roles", description = "Devuelve la lista paginada de roles. Requiere rol ADMINISTRADOR.")
     public ResponseEntity<PagedResponse<RoleResponseDTO>> getAllRoles(
             @PageableDefault(size = 10) Pageable pageable) {
         return ResponseEntity.ok(roleService.getAllRoles(pageable));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Actualizar un rol", description = "Actualiza el nombre y/o descripción de un rol existente. Requiere rol ADMIN.")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @Operation(summary = "Actualizar un rol", description = "Actualiza el nombre y/o descripción de un rol existente. Requiere rol ADMINISTRADOR.")
     public ResponseEntity<RoleResponseDTO> updateRole(@PathVariable Integer id, @Valid @RequestBody RoleRequestDTO request) {
         return ResponseEntity.ok(roleService.updateRole(id, request));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Eliminar un rol", description = "Elimina de forma permanente un rol del sistema. Requiere rol ADMIN.")
-    public ResponseEntity<Void> deleteRole(@PathVariable Integer id) {
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @Operation(summary = "Eliminar un rol", description = "Elimina de forma permanente un rol del sistema. Requiere rol ADMINISTRADOR.")
+    public ResponseEntity<ApiResponse<Void>> deleteRole(@PathVariable Integer id) {
         roleService.deleteRole(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.ok(null, "Rol eliminado exitosamente."));
     }
 }

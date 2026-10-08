@@ -22,6 +22,16 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD:Apr3nd1A_DB_!S3cur3Pa$$2026}
     driver-class-name: org.postgresql.Driver
 
+  # Correo (envío del código OTP). Sin MAIL_HOST el envío falla de forma explícita.
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+
   # Flyway Migration Configuration
   flyway:
     enabled: true
@@ -46,10 +56,21 @@ app:
     header: Authorization
     prefix: "Bearer "
   security:
+    api-key-rotation:
+      # "-" desactiva la rotación automática de API keys. Ej. trimestral: "0 0 0 1 1/3 ?"
+      cron: ${API_KEY_ROTATION_CRON:-}
     cors:
       allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173,http://localhost:8080,http://localhost:4200}
   encryption:
     secret: ${ENCRYPTION_SECRET:aprendia_encryption_secret_key_2026}
+  mail:
+    from: ${MAIL_FROM:no-reply@aprendia.local}
+  otp:
+    expiration-seconds: ${OTP_EXPIRATION_SECONDS:300}
+    cooldown-seconds: ${OTP_COOLDOWN_SECONDS:45}
+    max-attempts: ${OTP_MAX_ATTEMPTS:5}
+    # SOLO desarrollo: escribe el código en el log en vez de enviar correo
+    mock-delivery: ${OTP_MOCK_DELIVERY:false}
 
 # Logging configuration
 logging:
@@ -61,6 +82,9 @@ logging:
 
 # Monitoring
 management:
+  health:
+    mail:
+      enabled: false   # una caída del SMTP no debe marcar la API como DOWN
   endpoints:
     web:
       exposure:

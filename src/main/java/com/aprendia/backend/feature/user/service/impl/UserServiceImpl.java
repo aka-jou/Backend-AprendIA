@@ -1,381 +1,339 @@
 package com.aprendia.backend.feature.user.service.impl;
 
+import com.aprendia.backend.common.dto.PagedResponse;
+import com.aprendia.backend.common.security.CurrentUser;
+import com.aprendia.backend.common.security.RoleNames;
+import com.aprendia.backend.common.util.DateFormats;
 import com.aprendia.backend.exception.BadRequestException;
 import com.aprendia.backend.exception.ResourceNotFoundException;
+import com.aprendia.backend.feature.catalogs.entities.Dependency;
 import com.aprendia.backend.feature.catalogs.entities.Role;
+import com.aprendia.backend.feature.catalogs.repository.DependencyRepository;
 import com.aprendia.backend.feature.catalogs.repository.RoleRepository;
-import com.aprendia.backend.feature.catalogs.repository.MunicipalityRepository;
-import com.aprendia.backend.feature.catalogs.repository.StateRepository;
-import com.aprendia.backend.feature.catalogs.repository.ProfileRepository;
-import org.springframework.data.jpa.repository.JpaRepository;
+import com.aprendia.backend.feature.user.dto.UserAssignmentDTO;
+import com.aprendia.backend.feature.user.dto.UserCreateRequestDTO;
+import com.aprendia.backend.feature.user.dto.UserCredentialsUpdateDTO;
+import com.aprendia.backend.feature.user.dto.UserDetailDTO;
+import com.aprendia.backend.feature.user.dto.UserPersonaDTO;
+import com.aprendia.backend.feature.user.dto.UserSummaryDTO;
+import com.aprendia.backend.feature.user.dto.UserUpdateRequestDTO;
+import com.aprendia.backend.feature.user.entities.Person;
+import com.aprendia.backend.feature.user.entities.User;
 import com.aprendia.backend.feature.user.repository.PersonRepository;
-import com.aprendia.backend.feature.user.repository.StudentRepository;
-import com.aprendia.backend.feature.user.repository.PersonRelativeRepository;
-import com.aprendia.backend.feature.user.repository.RelativeRoleRepository;
 import com.aprendia.backend.feature.user.repository.UserRepository;
 import com.aprendia.backend.feature.user.service.UserService;
-import com.aprendia.backend.feature.user.mappers.StudentMapper;
-//arreglar wildcard
-import com.aprendia.backend.feature.user.dto.*;
-import com.aprendia.backend.feature.user.entities.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
-
+import java.util.stream.Stream;
 
 @Service
 public class UserServiceImpl implements UserService {
+
+    private static final String STATUS_ACTIVE = "Activo";
+    private static final String STATUS_INACTIVE = "Inactivo";
 
     @Autowired
     private UserRepository userRepository;
 
     @Autowired
+    private PersonRepository personRepository;
+
+    @Autowired
     private RoleRepository roleRepository;
+
+    @Autowired
+    private DependencyRepository dependencyRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private PersonRepository personRepository;
+    // ------------------------------------------------------------------ consultas
 
-    @Autowired
-    private StudentRepository studentRepository;
-
-    @Autowired
-    private PersonRelativeRepository personRelativeRepository;
-
-    @Autowired
-    private RelativeRoleRepository relativeRoleRepository;
-
-    @Autowired
-    private MunicipalityRepository municipalityRepository;
-
-    @Autowired
-    private StateRepository stateRepository;
-
-    @Autowired
-    private ProfileRepository profileRepository;
-
-    private <T> void ensureExists(JpaRepository<T, Long> repository, Long id, String entityName) {
-        if (id != null && !repository.existsById(id)) {
-            throw new ResourceNotFoundException("El " + entityName + " proporcionado (" + id + ") no existe en el catálogo.");
+    @Override
+    @Transactional(readOnly = true)
+    public PagedResponse<UserSummaryDTO> getUsers(String query, Pageable pageable) {
+        Page<User> page;
+        if (StringUtils.hasText(query)) {
+            String term = query.trim();
+            page = userRepository.searchStaff(RoleNames.STUDENT,
+                    "%" + term.toLowerCase(Locale.ROOT) + "%",
+                    term.toUpperCase(Locale.ROOT),
+                    pageable);
+        } else {
+            page = userRepository.findStaff(RoleNames.STUDENT, pageable);
         }
-    }
-
-
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<UserResponse> getAllUsers() {
-        return userRepository.findAll().stream()
-                .map(this::mapToUserResponse)
-                .collect(Collectors.toList());
+        return PagedResponse.fromPage(page.map(this::toSummary));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public UserResponse getUserById(Long id) {
-        if (id == null) {
-            throw new BadRequestException("El ID de usuario no puede ser nulo.");
-        }
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con ID: " + id));
-        return mapToUserResponse(user);
+    public UserDetailDTO getUserById(Long id) {
+        return toDetail(findStaffOrThrow(id));
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public UserResponse getUserByUsername(String username) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con username: " + username));
-        return mapToUserResponse(user);
-    }
-
-
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<StudentDto> getAllStudents(Pageable pageable) {
-        return studentRepository.findAll(pageable).map(this::mapToStudentDto);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public StudentDto getStudentById(Long id) {
-        Student student = studentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + id));
-        return mapToStudentDto(student);
-    }
-
-
+    // ------------------------------------------------------------------ alta
 
     @Override
     @Transactional
-    public UserResponse register(RegisterRequest registerRequest) {
-        return registerUserWithRole(registerRequest, "ROLE_USER");
-    }
+    public UserDetailDTO createUser(UserCreateRequestDTO request) {
+        UserPersonaDTO persona = request.persona();
+        String email = normalizeEmail(persona.email());
+        String curp = normalizeCurp(persona.curp());
+        String username = request.credentials().username().trim();
 
-
-    @Override
-    @Transactional
-    public StudentResponse registerStudent(StudentRequest request) {
-        String username = request.person().curp().toLowerCase();
-        
-        if (userRepository.existsByUsername(username)) {
-            throw new BadRequestException("Student is already registered (username already exists).");
-        }
-
-        if (userRepository.existsByEmail(request.email())) {
-            throw new BadRequestException("El correo electrónico ya está registrado.");
-        }
-
-        if (personRepository.existsByCurp(request.person().curp())) {
-            throw new BadRequestException("El CURP proporcionado ya está registrado en el sistema.");
-        }
-
-        if (request.profile() != null) {
-            ensureExists(profileRepository, request.profile().longValue(), "Perfil");
-        }
-        if (request.address() != null) {
-            if (request.address().municipalityId() != null) {
-                ensureExists(municipalityRepository, request.address().municipalityId().longValue(), "Municipio");
-            }
-            if (request.address().stateId() != null) {
-                ensureExists(stateRepository, request.address().stateId().longValue(), "Estado");
-            }
-        }
-
-        Person studentPerson = StudentMapper.buildPersonFromRequest(request.person());
-        studentPerson = personRepository.save(studentPerson);
-
-        Role studentRole = roleRepository.findByName("ROLE_STUDENT")
-                .orElseThrow(() -> new ResourceNotFoundException("Error: Role 'ROLE_STUDENT' is not registered."));
-        
-        String generatedQrCode = java.util.UUID.randomUUID().toString();
-        
-        User user = buildUserForStudent(username, request.email(), studentPerson, studentRole, generatedQrCode);
-        User savedUser = userRepository.save(user);
-
-        Student student = StudentMapper.buildStudentFromRequest(request, studentPerson, generatedQrCode);
-        studentRepository.save(student);
-
-        saveRelatives(studentPerson, request.relatives());
-
-        return StudentResponse.builder()
-                .id(savedUser.getId())
-                .qrCode(generatedQrCode)
-                .createdAt(savedUser.getCreatedAt() != null ? savedUser.getCreatedAt().toString() : java.time.LocalDateTime.now().toString())
-                .createdBy("system_admin") 
-                .build();
-    }
-
-
-
-
-    @Override
-    @Transactional
-    public StudentDto updateStudent(Long id, StudentRequest request) {
-        Student student = studentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + id));
-
-        if (request.profile() != null) {
-            ensureExists(profileRepository, request.profile().longValue(), "Perfil");
-        }
-        if (request.address() != null) {
-            if (request.address().municipalityId() != null) {
-                ensureExists(municipalityRepository, request.address().municipalityId().longValue(), "Municipio");
-            }
-            if (request.address().stateId() != null) {
-                ensureExists(stateRepository, request.address().stateId().longValue(), "Estado");
-            }
-        }
-
-        Person person = student.getPerson();
-        StudentMapper.updatePersonFromRequest(person, request.person());
-        personRepository.save(person);
-
-        student.setProfileId(request.profile());
-
-        Address address = student.getAddress();
-        if (address == null) {
-            address = new Address();
-            address.setStudent(student);
-        }
-
-        StudentMapper.updateAddressFromRequest(address, request.address());
-        student.setAddress(address);
-
-        student = studentRepository.save(student);
-
-        List<PersonRelative> existingRelatives = personRelativeRepository.findByPersonId(person.getId());
-        personRelativeRepository.deleteAll(existingRelatives);
-
-        saveRelatives(person, request.relatives());
-
-        return mapToStudentDto(student);
-    }
-
-
-
-    @Override
-    @Transactional
-    public void deleteUser(Long id) {
-        if (id == null) {
-            throw new BadRequestException("El ID de usuario no puede ser nulo.");
-        }
-        if (!userRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Usuario no encontrado con ID: " + id);
-        }
-        userRepository.deleteById(id);
-    }
-
-
-
-
-    private UserResponse registerUserWithRole(RegisterRequest registerRequest, String roleName) {
-        if (userRepository.existsByUsername(registerRequest.username())) {
+        if (userRepository.existsByUsernameIgnoreCase(username)) {
             throw new BadRequestException("El nombre de usuario ya está en uso.");
         }
-
-        if (userRepository.existsByEmail(registerRequest.email())) {
+        if (userRepository.existsByEmailIgnoreCase(email)) {
             throw new BadRequestException("El correo electrónico ya está registrado.");
         }
+        if (personRepository.existsByCurp(curp)) {
+            throw new BadRequestException("La CURP proporcionada ya está registrada en el sistema.");
+        }
 
-        User user = User.builder()
-                .username(registerRequest.username())
-                .email(registerRequest.email())
-                .password(passwordEncoder.encode(registerRequest.password()))
-                .isActive(true)
-                .build();
+        Set<Role> roles = resolveRoles(request.assignment().roles());
+        Dependency dependency = resolveDependency(request.assignment().dependency());
 
-        Role userRole = roleRepository.findByName(roleName)
-                .orElseThrow(() -> new ResourceNotFoundException("Error: El Rol base '" + roleName + "' no está registrado en la base de datos."));
+        Person person = new Person();
+        applyPersona(person, persona, curp, request.assignment());
+        person = personRepository.save(person);
 
-        user.setRoles(new HashSet<>(Collections.singletonList(userRole)));
-
-        User savedUser = userRepository.save(user);
-
-        return mapToUserResponse(savedUser);
-    }
-
-
-    private UserResponse mapToUserResponse(User user) {
-        return UserResponse.builder()
-                .id(user.getId())
-                .username(user.getUsername())
-                .email(user.getEmail())
-                .isActive(user.isActive())
-                .roles(user.getRoles().stream()
-                        .map(Role::getName)
-                        .collect(Collectors.toList()))
-                .build();
-    }
-
-    private User buildUserForStudent(String username, String email, Person person, Role role, String qrCode) {
         User user = User.builder()
                 .username(username)
                 .email(email)
-                .password(passwordEncoder.encode(java.util.UUID.randomUUID().toString()))
+                .password(passwordEncoder.encode(request.credentials().password()))
                 .isActive(true)
                 .person(person)
-                .qrCode(qrCode)
+                .dependency(dependency)
+                .roles(roles)
                 .build();
-        user.setRoles(new HashSet<>(Collections.singletonList(role)));
-        return user;
+
+        return toDetail(userRepository.save(user));
     }
 
-    private StudentDto mapToStudentDto(Student student) {
-        PersonDto personDto = null;
-        if (student.getPerson() != null) {
-            personDto = PersonDto.builder()
-                    .id(student.getPerson().getId())
-                    .firstName(student.getPerson().getFirstName())
-                    .middleName(student.getPerson().getMiddleName())
-                    .lastName(student.getPerson().getLastName())
-                    .secondLastName(student.getPerson().getSecondLastName())
-                    .curp(student.getPerson().getCurp())
-                    .birthDate(student.getPerson().getBirthDate())
-                    .gender(student.getPerson().getGender())
-                    .phone(student.getPerson().getPhone())
-                    .imageUrl(student.getPerson().getImageUrl())
-                    .build();
+    // ------------------------------------------------------------------ actualización
+
+    @Override
+    @Transactional
+    public UserDetailDTO updateUser(Long id, UserUpdateRequestDTO request) {
+        User user = findStaffOrThrow(id);
+        boolean isSelf = user.getUsername().equals(CurrentUser.username());
+
+        UserPersonaDTO persona = request.persona();
+        String email = normalizeEmail(persona.email());
+        String curp = normalizeCurp(persona.curp());
+
+        userRepository.findByEmailIgnoreCase(email)
+                .filter(other -> !other.getId().equals(user.getId()))
+                .ifPresent(other -> { throw new BadRequestException("El correo electrónico ya está registrado."); });
+
+        Person person = user.getPerson() != null ? user.getPerson() : new Person();
+        personRepository.findByCurp(curp)
+                .filter(other -> person.getId() == null || !other.getId().equals(person.getId()))
+                .ifPresent(other -> { throw new BadRequestException("La CURP proporcionada ya está registrada en el sistema."); });
+
+        Set<Role> roles = resolveRoles(request.assignment().roles());
+        if (isSelf && roles.stream().noneMatch(r -> RoleNames.ADMINISTRADOR.equals(r.getName()))) {
+            throw new BadRequestException("No puede quitarse a sí mismo el rol ADMINISTRADOR.");
         }
 
-        AddressDto addressDto = null;
-        if (student.getAddress() != null) {
-            addressDto = AddressDto.builder()
-                    .id(student.getAddress().getId())
-                    .street(student.getAddress().getStreet())
-                    .exteriorNumber(student.getAddress().getExteriorNumber())
-                    .settlementType(student.getAddress().getSettlementType())
-                    .settlement(student.getAddress().getSettlement())
-                    .municipalityId(student.getAddress().getMunicipalityId())
-                    .stateId(student.getAddress().getStateId())
-                    .zipCode(student.getAddress().getZipCode())
-                    .build();
+        if (STATUS_INACTIVE.equals(request.status())) {
+            if (isSelf) {
+                throw new BadRequestException("No puede desactivar su propia cuenta.");
+            }
+            user.setActive(false);
+        } else if (STATUS_ACTIVE.equals(request.status())) {
+            user.setActive(true);
         }
 
-        java.util.List<RelativeDto> relativesDto = new java.util.ArrayList<>();
-        if (student.getPerson() != null) {
-            relativesDto = personRelativeRepository.findByPersonId(student.getPerson().getId()).stream()
-                    .map(pr -> new RelativeDto(
-                            PersonDto.builder()
-                                    .id(pr.getRelativePerson().getId())
-                                    .firstName(pr.getRelativePerson().getFirstName())
-                                    .lastName(pr.getRelativePerson().getLastName())
-                                    .build(),
-                            pr.getRelativeRole().getName()
-                    ))
-                    .collect(Collectors.toList());
+        UserCredentialsUpdateDTO credentials = request.credentials();
+        if (credentials != null) {
+            String username = credentials.username().trim();
+            if (!username.equalsIgnoreCase(user.getUsername())) {
+                if (isSelf) {
+                    throw new BadRequestException("No puede cambiar su propio nombre de usuario: invalidaría su sesión actual.");
+                }
+                if (userRepository.existsByUsernameIgnoreCase(username)) {
+                    throw new BadRequestException("El nombre de usuario ya está en uso.");
+                }
+                user.setUsername(username);
+            }
+            if (StringUtils.hasText(credentials.password())) {
+                user.setPassword(passwordEncoder.encode(credentials.password()));
+            }
         }
 
-        return StudentDto.builder()
-                .id(student.getId())
-                .profileId(student.getProfileId())
-                .qrUrl(student.getQrUrl())
-                .person(personDto)
-                .address(addressDto)
-                .relatives(relativesDto)
+        applyPersona(person, persona, curp, request.assignment());
+        user.setPerson(personRepository.save(person));
+        user.setEmail(email);
+        user.setRoles(roles);
+        user.setDependency(resolveDependency(request.assignment().dependency()));
+
+        return toDetail(userRepository.save(user));
+    }
+
+    // ------------------------------------------------------------------ baja
+
+    @Override
+    @Transactional
+    public void deactivateUser(Long id) {
+        User user = findStaffOrThrow(id);
+        if (user.getUsername().equals(CurrentUser.username())) {
+            throw new BadRequestException("No puede desactivar su propia cuenta.");
+        }
+        // Baja lógica: el registro se conserva para auditoría; sin is_active no puede autenticarse
+        user.setActive(false);
+        userRepository.save(user);
+    }
+
+    // ------------------------------------------------------------------ apoyo
+
+    /** El módulo de usuarios solo opera sobre personal; los estudiantes se gestionan en /students. */
+    private User findStaffOrThrow(Long id) {
+        return userRepository.findById(id)
+                .filter(user -> user.getRoles().stream().noneMatch(r -> RoleNames.STUDENT.equals(r.getName())))
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con ID: " + id));
+    }
+
+    private Set<Role> resolveRoles(List<String> requested) {
+        Set<String> authorities = requested.stream()
+                .map(RoleNames::toAuthority)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        if (authorities.contains(RoleNames.STUDENT)) {
+            throw new BadRequestException("El rol STUDENT no se asigna desde /users; registre al alumno en /students.");
+        }
+
+        Set<Role> roles = new HashSet<>();
+        List<String> unknown = new ArrayList<>();
+        for (String authority : authorities) {
+            roleRepository.findByName(authority).ifPresentOrElse(roles::add, () -> unknown.add(RoleNames.toApi(authority)));
+        }
+        if (!unknown.isEmpty()) {
+            throw new BadRequestException("Roles no registrados en el catálogo: " + String.join(", ", unknown) + ".");
+        }
+        return roles;
+    }
+
+    private Dependency resolveDependency(String name) {
+        return dependencyRepository.findFirstByNameIgnoreCase(name.trim())
+                .orElseThrow(() -> new BadRequestException(
+                        "La dependencia '" + name.trim() + "' no existe en el catálogo de dependencias."));
+    }
+
+    private void applyPersona(Person person, UserPersonaDTO persona, String curp, UserAssignmentDTO assignment) {
+        person.setCurp(curp);
+        person.setFirstName(persona.firstName().trim());
+        person.setMiddleName(blankToNull(persona.secondName()));
+        person.setLastName(persona.firstSurname().trim());
+        person.setSecondLastName(blankToNull(persona.secondSurname()));
+        person.setBirthDate(DateFormats.startOfDay(persona.birthDate()));
+        person.setGender(persona.gender().toUpperCase(Locale.ROOT));
+        person.setPhone(persona.phone());
+        person.setIneNumber(blankToNull(assignment.ineNumber()));
+        person.setImageUrl(blankToNull(assignment.photoUrl()));
+    }
+
+    private UserSummaryDTO toSummary(User user) {
+        Person person = user.getPerson();
+        return UserSummaryDTO.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .nombreCompleto(fullName(user))
+                .email(user.getEmail())
+                .role(primaryRole(user))
+                .adscripcion(user.getDependency() != null ? user.getDependency().getName() : null)
+                .status(user.isActive() ? STATUS_ACTIVE : STATUS_INACTIVE)
+                .curp(person != null ? person.getCurp() : null)
+                .createdAt(DateFormats.isoInstant(user.getCreatedAt()))
                 .build();
     }
 
-    private void saveRelatives(Person studentPerson, List<RelativeRequest> relatives) {
-        if (relatives == null || relatives.isEmpty()) {
-            return;
-        }
+    private UserDetailDTO toDetail(User user) {
+        Person person = user.getPerson();
+        List<String> roles = apiRoles(user);
 
-        List<PersonRelative> prList = relatives.stream()
-            .map(relReq -> {
-                RelativeRole role = relativeRoleRepository.findByName(relReq.relationship())
-                    .orElseGet(() -> {
-                        RelativeRole newRole = new RelativeRole();
-                        newRole.setName(relReq.relationship());
-                        return relativeRoleRepository.save(newRole);
-                    });
+        UserDetailDTO.Persona personaDto = person == null ? null : UserDetailDTO.Persona.builder()
+                .curp(person.getCurp())
+                .firstName(person.getFirstName())
+                .secondName(person.getMiddleName())
+                .firstSurname(person.getLastName())
+                .secondSurname(person.getSecondLastName())
+                .birthDate(DateFormats.isoDate(person.getBirthDate()))
+                .gender(person.getGender())
+                .email(user.getEmail())
+                .phone(person.getPhone())
+                .build();
 
-                Person relativePerson = Person.builder()
-                    .firstName(relReq.name())
-                    .lastName("N/A") 
-                    .build();
-                relativePerson = personRepository.save(relativePerson);
+        UserDetailDTO.Assignment assignmentDto = UserDetailDTO.Assignment.builder()
+                .roles(roles)
+                .dependency(user.getDependency() != null ? user.getDependency().getName() : null)
+                .idDependencia(user.getDependency() != null ? user.getDependency().getId() : null)
+                .ineNumber(person != null ? person.getIneNumber() : null)
+                .photoUrl(person != null ? person.getImageUrl() : null)
+                .build();
 
-                return PersonRelative.builder()
-                    .person(studentPerson)
-                    .relativePerson(relativePerson)
-                    .relativeRole(role)
-                    .build();
-            })
-            .collect(Collectors.toList());
-
-        personRelativeRepository.saveAll(prList);
+        return UserDetailDTO.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .nombreCompleto(fullName(user))
+                .email(user.getEmail())
+                .status(user.isActive() ? STATUS_ACTIVE : STATUS_INACTIVE)
+                .roles(roles)
+                .persona(personaDto)
+                .assignment(assignmentDto)
+                .createdAt(DateFormats.isoInstant(user.getCreatedAt()))
+                .updatedAt(DateFormats.isoInstant(user.getUpdatedAt()))
+                .build();
     }
 
+    private List<String> apiRoles(User user) {
+        return user.getRoles().stream().map(r -> RoleNames.toApi(r.getName())).sorted().toList();
+    }
+
+    /** La spec lista un solo "role" por usuario: ADMINISTRADOR tiene prioridad, si no el primero alfabético. */
+    private String primaryRole(User user) {
+        return apiRoles(user).stream()
+                .min(Comparator.comparing((String r) -> !"ADMINISTRADOR".equals(r)).thenComparing(r -> r))
+                .orElse(null);
+    }
+
+    private String fullName(User user) {
+        Person p = user.getPerson();
+        if (p == null) {
+            return user.getUsername();
+        }
+        return Stream.of(p.getFirstName(), p.getMiddleName(), p.getLastName(), p.getSecondLastName())
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.joining(" "));
+    }
+
+    private String normalizeEmail(String email) {
+        return email.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private String normalizeCurp(String curp) {
+        return curp.trim().toUpperCase(Locale.ROOT);
+    }
+
+    private String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
 }
