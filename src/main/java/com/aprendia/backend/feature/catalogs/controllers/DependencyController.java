@@ -1,5 +1,6 @@
 package com.aprendia.backend.feature.catalogs.controllers;
 
+import com.aprendia.backend.common.dto.ApiResponse;
 import com.aprendia.backend.common.dto.PagedResponse;
 import com.aprendia.backend.feature.catalogs.dto.DependencyRequestDTO;
 import com.aprendia.backend.feature.catalogs.dto.DependencyResponseDTO;
@@ -49,8 +50,8 @@ public class DependencyController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMINISTRADOR')")
     @Operation(summary = "Eliminar una dependencia", description = "Elimina de forma permanente una dependencia del sistema. Requiere rol ADMINISTRADOR.")
-    public ResponseEntity<Void> deleteDependency(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Void>> deleteDependency(@PathVariable Long id) {
         dependencyService.deleteDependency(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.ok(null, "Dependencia eliminada exitosamente."));
     }
 }

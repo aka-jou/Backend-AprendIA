@@ -1,5 +1,7 @@
 package com.aprendia.backend.feature.catalogs.controllers;
 
+import com.aprendia.backend.common.dto.ApiResponse;
+import com.aprendia.backend.common.response.ApiMessage;
 import com.aprendia.backend.feature.catalogs.dto.ProfileRequestDTO;
 import com.aprendia.backend.feature.catalogs.dto.ProfileResponseDTO;
 import com.aprendia.backend.feature.catalogs.service.ProfileService;
@@ -16,7 +18,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/v1/catalogs/profiles")
-@Tag(name = "Catálogo de Perfiles", description = "Endpoints para la administración del catálogo de perfiles de acceso. Requieren JWT y rol ADMINISTRADOR.")
+@Tag(name = "Catálogo de Perfiles", description = "Perfiles pedagógicos y de personal (Especificación v2.0, sección 5.3). Requieren JWT y rol ADMINISTRADOR.")
 public class ProfileController {
 
     @Autowired
@@ -24,31 +26,41 @@ public class ProfileController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMINISTRADOR')")
-    @Operation(summary = "Crear un perfil", description = "Crea un nuevo perfil de acceso. Requiere rol ADMINISTRADOR.")
-    public ResponseEntity<ProfileResponseDTO> createProfile(@Valid @RequestBody ProfileRequestDTO request) {
-        ProfileResponseDTO response = profileService.createProfile(request);
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    @ApiMessage("Perfil creado exitosamente.")
+    @Operation(summary = "Crear Perfil")
+    public ResponseEntity<ProfileResponseDTO> create(@Valid @RequestBody ProfileRequestDTO request) {
+        return new ResponseEntity<>(profileService.createProfile(request), HttpStatus.CREATED);
     }
 
     @GetMapping
     @PreAuthorize("hasRole('ADMINISTRADOR')")
-    @Operation(summary = "Obtener perfiles", description = "Devuelve la lista de perfiles. Requiere rol ADMINISTRADOR.")
-    public ResponseEntity<List<ProfileResponseDTO>> getAllProfiles() {
+    @ApiMessage("Perfiles obtenidos exitosamente.")
+    @Operation(summary = "Listar Perfiles", description = "Lista completa (sin paginar), ordenada por ID, como la consume el frontend.")
+    public ResponseEntity<List<ProfileResponseDTO>> getAll() {
         return ResponseEntity.ok(profileService.getAllProfiles());
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @ApiMessage("Perfil obtenido exitosamente.")
+    @Operation(summary = "Obtener Perfil por ID")
+    public ResponseEntity<ProfileResponseDTO> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(profileService.getProfileById(id));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMINISTRADOR')")
-    @Operation(summary = "Actualizar un perfil", description = "Actualiza el nombre y/o nivel de acceso de un perfil existente. Requiere rol ADMINISTRADOR.")
-    public ResponseEntity<ProfileResponseDTO> updateProfile(@PathVariable Long id, @Valid @RequestBody ProfileRequestDTO request) {
+    @ApiMessage("Perfil actualizado exitosamente.")
+    @Operation(summary = "Actualizar Perfil")
+    public ResponseEntity<ProfileResponseDTO> update(@PathVariable Long id, @Valid @RequestBody ProfileRequestDTO request) {
         return ResponseEntity.ok(profileService.updateProfile(id, request));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMINISTRADOR')")
-    @Operation(summary = "Eliminar un perfil", description = "Elimina de forma permanente un perfil del sistema. Requiere rol ADMINISTRADOR.")
-    public ResponseEntity<Void> deleteProfile(@PathVariable Long id) {
+    @Operation(summary = "Eliminar Perfil", description = "Responde 409 si otros registros lo referencian; en ese caso use status=false.")
+    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         profileService.deleteProfile(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.ok(null, "Perfil eliminado exitosamente."));
     }
 }

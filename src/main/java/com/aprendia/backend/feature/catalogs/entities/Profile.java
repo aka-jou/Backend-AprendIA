@@ -4,8 +4,10 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "profiles")
@@ -23,6 +25,16 @@ public class Profile {
     @Column(length = 100, nullable = false)
     private String name;
 
-    @Column(name = "access_level", nullable = false)
-    private Integer accessLevel;
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private Boolean status = Boolean.TRUE;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "created_by", length = 50, nullable = false, updatable = false)
+    private String createdBy;
 }

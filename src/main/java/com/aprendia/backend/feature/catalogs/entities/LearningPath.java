@@ -10,23 +10,24 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "metodologies")
+@Table(name = "learning_paths")
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Metodology {
+public class LearningPath {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(length = 100, nullable = false)
+    @Column(length = 150, nullable = false)
     private String name;
 
-    @Column(length = 150)
-    private String author;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "metodology_id", nullable = false)
+    private Metodology metodology;
 
     @Builder.Default
     @Column(nullable = false)

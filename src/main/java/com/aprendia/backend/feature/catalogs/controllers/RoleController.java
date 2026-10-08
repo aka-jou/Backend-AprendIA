@@ -1,5 +1,6 @@
 package com.aprendia.backend.feature.catalogs.controllers;
 
+import com.aprendia.backend.common.dto.ApiResponse;
 import com.aprendia.backend.common.dto.PagedResponse;
 import com.aprendia.backend.feature.catalogs.dto.RoleRequestDTO;
 import com.aprendia.backend.feature.catalogs.dto.RoleResponseDTO;
@@ -49,8 +50,8 @@ public class RoleController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMINISTRADOR')")
     @Operation(summary = "Eliminar un rol", description = "Elimina de forma permanente un rol del sistema. Requiere rol ADMINISTRADOR.")
-    public ResponseEntity<Void> deleteRole(@PathVariable Integer id) {
+    public ResponseEntity<ApiResponse<Void>> deleteRole(@PathVariable Integer id) {
         roleService.deleteRole(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.ok(null, "Rol eliminado exitosamente."));
     }
 }

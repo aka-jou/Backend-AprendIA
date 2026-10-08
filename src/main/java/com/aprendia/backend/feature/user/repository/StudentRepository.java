@@ -20,4 +20,6 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
     java.util.Optional<Student> findById(@NonNull Long id);
 
     java.util.Optional<Student> findByPersonId(Long personId);
+
+    boolean existsByProfileId(Integer profileId);
 }

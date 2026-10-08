@@ -1,5 +1,6 @@
 package com.aprendia.backend.feature.catalogs.controllers;
 
+import com.aprendia.backend.common.dto.ApiResponse;
 import com.aprendia.backend.common.dto.PagedResponse;
 import com.aprendia.backend.feature.catalogs.dto.StateRequestDTO;
 import com.aprendia.backend.feature.catalogs.dto.StateResponseDTO;
@@ -49,8 +50,8 @@ public class StateController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMINISTRADOR')")
     @Operation(summary = "Eliminar un estado", description = "Elimina de forma permanente un estado del sistema. Requiere rol ADMINISTRADOR.")
-    public ResponseEntity<Void> deleteState(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Void>> deleteState(@PathVariable Long id) {
         stateService.deleteState(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.ok(null, "Estado eliminado exitosamente."));
     }
 }

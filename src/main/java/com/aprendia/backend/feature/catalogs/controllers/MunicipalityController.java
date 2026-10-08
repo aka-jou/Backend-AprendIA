@@ -1,5 +1,6 @@
 package com.aprendia.backend.feature.catalogs.controllers;
 
+import com.aprendia.backend.common.dto.ApiResponse;
 import com.aprendia.backend.common.dto.PagedResponse;
 import com.aprendia.backend.feature.catalogs.dto.MunicipalityRequestDTO;
 import com.aprendia.backend.feature.catalogs.dto.MunicipalityResponseDTO;
@@ -57,8 +58,8 @@ public class MunicipalityController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMINISTRADOR')")
     @Operation(summary = "Eliminar municipio", description = "Elimina físicamente un municipio del catálogo.")
-    public ResponseEntity<Void> deleteMunicipality(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Void>> deleteMunicipality(@PathVariable Long id) {
         municipalityService.deleteMunicipality(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.ok(null, "Municipio eliminado exitosamente."));
     }
 }
