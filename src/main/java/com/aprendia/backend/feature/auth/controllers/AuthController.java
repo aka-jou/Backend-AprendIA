@@ -25,7 +25,7 @@ public class AuthController {
     private AuthService authService;
 
     @PostMapping("/admin")
-    @Operation(summary = "Iniciar sesión (admin/usuario)", description = "Autentica al usuario por credenciales y devuelve un token JWT.", security = { @SecurityRequirement(name = "ApiKeyAuth") })
+    @Operation(summary = "Iniciar sesión (admin/usuario)", deprecated = true, description = "OBSOLETO: usar /auth/otp/send y /auth/otp/verify. Autentica por usuario y contraseña y devuelve un token JWT.", security = { @SecurityRequirement(name = "ApiKeyAuth") })
     public ResponseEntity<AuthResponseDTO> loginAdmin(@Valid @RequestBody UserLoginDTO loginRequest) {
         AuthResponseDTO response = authService.login(loginRequest);
         return ResponseEntity.ok(response);

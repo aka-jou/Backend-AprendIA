@@ -78,6 +78,9 @@ public class SecurityConfig {
                         // Rutas públicas de autenticación (login admin y student no requieren token)
                         .requestMatchers("/v1/auth/admin", "/v1/auth/student").permitAll()
 
+                        // Login OTP passwordless (paso 1: enviar código, paso 2: verificar)
+                        .requestMatchers("/v1/auth/otp/send", "/v1/auth/otp/verify").permitAll()
+
                         // Registro de usuarios público (no requiere token)
                         .requestMatchers("/v1/users/register").permitAll()
 

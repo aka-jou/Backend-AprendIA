@@ -74,6 +74,12 @@ public class GlobalExceptionHandler {
 
     // ---------- 401 / 403 ----------
 
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleUnauthorized(UnauthorizedException ex) {
+        logger.warn("No autorizado: {}", ex.getMessage());
+        return build(HttpStatus.UNAUTHORIZED, ex.getMessage());
+    }
+
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ApiResponse<Void>> handleAuthentication(AuthenticationException ex) {
         logger.warn("Fallo de autenticación: {}", ex.getMessage());
@@ -111,6 +117,14 @@ public class GlobalExceptionHandler {
         logger.warn("Violación de integridad de datos: {}", ex.getMessage());
         return build(HttpStatus.CONFLICT,
                 "No se pudo completar la operación debido a un problema de integridad de datos (registro inexistente o duplicado).");
+    }
+
+    // ---------- 429 ----------
+
+    @ExceptionHandler(TooManyRequestsException.class)
+    public ResponseEntity<ApiResponse<Void>> handleTooManyRequests(TooManyRequestsException ex) {
+        logger.warn("Límite de uso excedido: {}", ex.getMessage());
+        return build(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage());
     }
 
     // ---------- 500 ----------
