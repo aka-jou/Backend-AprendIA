@@ -16,37 +16,37 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/v1/catalogs/profiles")
-@Tag(name = "Catálogo de Perfiles", description = "Endpoints para la administración del catálogo de perfiles de acceso. Requieren JWT y rol ADMIN.")
+@Tag(name = "Catálogo de Perfiles", description = "Endpoints para la administración del catálogo de perfiles de acceso. Requieren JWT y rol ADMINISTRADOR.")
 public class ProfileController {
 
     @Autowired
     private ProfileService profileService;
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Crear un perfil", description = "Crea un nuevo perfil de acceso. Requiere rol ADMIN.")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @Operation(summary = "Crear un perfil", description = "Crea un nuevo perfil de acceso. Requiere rol ADMINISTRADOR.")
     public ResponseEntity<ProfileResponseDTO> createProfile(@Valid @RequestBody ProfileRequestDTO request) {
         ProfileResponseDTO response = profileService.createProfile(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Obtener perfiles", description = "Devuelve la lista de perfiles. Requiere rol ADMIN.")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @Operation(summary = "Obtener perfiles", description = "Devuelve la lista de perfiles. Requiere rol ADMINISTRADOR.")
     public ResponseEntity<List<ProfileResponseDTO>> getAllProfiles() {
         return ResponseEntity.ok(profileService.getAllProfiles());
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Actualizar un perfil", description = "Actualiza el nombre y/o nivel de acceso de un perfil existente. Requiere rol ADMIN.")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @Operation(summary = "Actualizar un perfil", description = "Actualiza el nombre y/o nivel de acceso de un perfil existente. Requiere rol ADMINISTRADOR.")
     public ResponseEntity<ProfileResponseDTO> updateProfile(@PathVariable Long id, @Valid @RequestBody ProfileRequestDTO request) {
         return ResponseEntity.ok(profileService.updateProfile(id, request));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Eliminar un perfil", description = "Elimina de forma permanente un perfil del sistema. Requiere rol ADMIN.")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @Operation(summary = "Eliminar un perfil", description = "Elimina de forma permanente un perfil del sistema. Requiere rol ADMINISTRADOR.")
     public ResponseEntity<Void> deleteProfile(@PathVariable Long id) {
         profileService.deleteProfile(id);
         return ResponseEntity.noContent().build();

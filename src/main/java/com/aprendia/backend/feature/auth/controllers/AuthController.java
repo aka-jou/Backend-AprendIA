@@ -39,7 +39,7 @@ public class AuthController {
     }
 
     @GetMapping("/validate-token")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
     @Operation(summary = "Validar token JWT", description = "Valida que un token de acceso (JWT) esté vigente.")
     public ResponseEntity<AuthResponse> validateToken(@Valid @RequestBody TokenValidationRequestDTO request) {
         AuthResponse response = authService.validateToken(request.accessToken());

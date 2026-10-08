@@ -25,7 +25,7 @@ public class MunicipalityController {
     private MunicipalityService municipalityService;
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
     @Operation(summary = "Crear municipio", description = "Registra un nuevo municipio en el catálogo.")
     public ResponseEntity<MunicipalityResponseDTO> createMunicipality(@Valid @RequestBody MunicipalityRequestDTO request) {
         return new ResponseEntity<>(municipalityService.createMunicipality(request), HttpStatus.CREATED);
@@ -47,7 +47,7 @@ public class MunicipalityController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
     @Operation(summary = "Actualizar municipio", description = "Actualiza los datos de un municipio existente.")
     public ResponseEntity<MunicipalityResponseDTO> updateMunicipality(
             @PathVariable Long id, @Valid @RequestBody MunicipalityRequestDTO request) {
@@ -55,7 +55,7 @@ public class MunicipalityController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
     @Operation(summary = "Eliminar municipio", description = "Elimina físicamente un municipio del catálogo.")
     public ResponseEntity<Void> deleteMunicipality(@PathVariable Long id) {
         municipalityService.deleteMunicipality(id);

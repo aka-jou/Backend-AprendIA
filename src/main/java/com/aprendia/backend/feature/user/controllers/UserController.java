@@ -36,7 +36,7 @@ public class UserController {
 
     @GetMapping
     @Operation(summary = "Obtener todos los usuarios", description = "Devuelve una lista completa de los usuarios registrados. Requiere rol de administrador.")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
     public ResponseEntity<List<UserResponse>> getAllUsers() {
         List<UserResponse> users = userService.getAllUsers();
         return ResponseEntity.ok(users);
@@ -51,8 +51,8 @@ public class UserController {
 
 
     @GetMapping("/students")
-    @Operation(summary = "Obtener estudiantes", description = "Devuelve una lista paginada de estudiantes. Requiere rol ADMIN.")
-    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Obtener estudiantes", description = "Devuelve una lista paginada de estudiantes. Requiere rol ADMINISTRADOR.")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
     public ResponseEntity<PagedResponse<StudentDto>> getAllStudents(
             @ParameterObject @PageableDefault(size = 100) Pageable pageable) {
         Page<StudentDto> students = userService.getAllStudents(pageable);
@@ -60,8 +60,8 @@ public class UserController {
     }
 
     @GetMapping("/students/{id}")
-    @Operation(summary = "Obtener un estudiante por ID", description = "Retorna la información completa de un estudiante específico. Requiere rol ADMIN.")
-    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Obtener un estudiante por ID", description = "Retorna la información completa de un estudiante específico. Requiere rol ADMINISTRADOR.")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
     public ResponseEntity<StudentDto> getStudentById(@PathVariable Long id) {
         return ResponseEntity.ok(userService.getStudentById(id));
     }
@@ -76,7 +76,7 @@ public class UserController {
 
 
     @PostMapping("/students")
-    @Operation(summary = "Registrar estudiante", description = "Registra un estudiante con datos personales, domicilio y parientes. Requiere rol ADMIN.")
+    @Operation(summary = "Registrar estudiante", description = "Registra un estudiante con datos personales, domicilio y parientes. Requiere rol ADMINISTRADOR.")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "201", description = "Estudiante registrado exitosamente."),
         @ApiResponse(responseCode = "400", description = "Error de validación en datos de entrada."),
@@ -84,16 +84,16 @@ public class UserController {
         @ApiResponse(responseCode = "403", description = "No tiene permisos suficientes."),
         @ApiResponse(responseCode = "500", description = "Error inesperado.")
     })
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
     public ResponseEntity<StudentResponse> registerStudent(@Valid @RequestBody StudentRequest request) {
         StudentResponse response = userService.registerStudent(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
 
-    @Operation(summary = "Actualizar un estudiante", description = "Actualiza la información personal, dirección y familiares de un estudiante. Requiere rol ADMIN.")
+    @Operation(summary = "Actualizar un estudiante", description = "Actualiza la información personal, dirección y familiares de un estudiante. Requiere rol ADMINISTRADOR.")
     @PutMapping("/students/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
     public ResponseEntity<StudentDto> updateStudent(
             @PathVariable Long id, 
             @Valid @RequestBody StudentRequest request) {
@@ -102,7 +102,7 @@ public class UserController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Eliminar un usuario", description = "Elimina de forma permanente un usuario por su ID. Requiere rol de administrador.")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();

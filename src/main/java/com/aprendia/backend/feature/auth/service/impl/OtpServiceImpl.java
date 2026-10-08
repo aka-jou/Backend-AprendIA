@@ -1,5 +1,6 @@
 package com.aprendia.backend.feature.auth.service.impl;
 
+import com.aprendia.backend.common.security.RoleNames;
 import com.aprendia.backend.exception.TooManyRequestsException;
 import com.aprendia.backend.exception.UnauthorizedException;
 import com.aprendia.backend.feature.auth.dto.OtpSendResponseDTO;
@@ -167,7 +168,7 @@ public class OtpServiceImpl implements OtpService {
                     safe(person.getLastName()), safe(person.getSecondLastName())).replaceAll("\\s+", " ").trim();
         }
 
-        List<String> roles = user.getRoles().stream().map(role -> role.getName()).toList();
+        List<String> roles = user.getRoles().stream().map(role -> RoleNames.toApi(role.getName())).toList();
 
         return OtpUserInfoDTO.builder()
                 .idUsuario(user.getId())
