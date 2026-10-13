@@ -27,6 +27,10 @@ public record StudentRequestDTO(
     @Positive(message = "profile debe ser un número positivo.")
     Long profile,
 
+    /** Docente asignado: id de un usuario activo con rol DOCENTE_AULA. Opcional; null deja al alumno sin docente. */
+    @Positive(message = "teacherId debe ser un número positivo.")
+    Long teacherId,
+
     @NotBlank(message = "El correo de acceso a la app móvil es obligatorio.")
     @Email(message = "El correo no tiene un formato válido.")
     @Size(max = 100, message = "El correo no puede superar los 100 caracteres.")

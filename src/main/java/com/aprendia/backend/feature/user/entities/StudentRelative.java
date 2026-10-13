@@ -1,5 +1,6 @@
 package com.aprendia.backend.feature.user.entities;
 
+import com.aprendia.backend.security.crypto.EncryptedStringConverter;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -7,9 +8,16 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-/** Familiar o tutor vinculado a un estudiante: { name, relationship, phone }. */
+/**
+ * Familiar o tutor vinculado a un estudiante.
+ *
+ * {@code name} guarda el nombre completo calculado a partir de las partes (firstName, middleName,
+ * lastName, secondLastName). Los familiares registrados antes de V22 solo tienen name, relationship
+ * y phone; el resto de columnas queda en null para ellos.
+ */
 @Entity
 @Table(name = "student_relatives")
 @Getter
@@ -30,12 +38,40 @@ public class StudentRelative {
     @Column(length = 150, nullable = false)
     private String name;
 
+    @Column(name = "first_name", length = 100)
+    private String firstName;
+
+    @Column(name = "middle_name", length = 100)
+    private String middleName;
+
+    @Column(name = "last_name", length = 100)
+    private String lastName;
+
+    @Column(name = "second_last_name", length = 100)
+    private String secondLastName;
+
+    @Convert(converter = EncryptedStringConverter.class)
+    @Column(length = 255)
+    private String curp;
+
+    @Column(name = "birth_date")
+    private LocalDate birthDate;
+
+    @Column(length = 1, columnDefinition = "CHAR(1)")
+    private String gender;
+
     @Column(length = 50, nullable = false)
     private String relationship;
 
-    @Convert(converter = com.aprendia.backend.security.crypto.EncryptedStringConverter.class)
+    @Convert(converter = EncryptedStringConverter.class)
     @Column(length = 255)
     private String phone;
+
+    @Column(length = 100)
+    private String email;
+
+    @Embedded
+    private RelativeAddress address;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

@@ -51,4 +51,35 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
                OR EXISTS (SELECT u.id FROM User u WHERE u.person = p AND LOWER(u.email) LIKE :pattern)
             """)
     Page<Student> search(@Param("pattern") String pattern, @Param("curp") String curp, Pageable pageable);
+
+    /** Alumnos asignados a un docente (GET /v1/users/{teacherId}/students). */
+    @EntityGraph(attributePaths = {"person", "address"})
+    Page<Student> findByTeacherId(Long teacherId, Pageable pageable);
+
+    /** Igual que {@link #search} pero restringido a los alumnos de un docente. */
+    @EntityGraph(attributePaths = {"person", "address"})
+    @Query(value = """
+            SELECT s FROM Student s JOIN s.person p
+            WHERE s.teacherId = :teacherId
+              AND (LOWER(p.firstName) LIKE :pattern
+               OR LOWER(p.middleName) LIKE :pattern
+               OR LOWER(p.lastName) LIKE :pattern
+               OR LOWER(p.secondLastName) LIKE :pattern
+               OR LOWER(CONCAT(p.firstName, ' ', p.lastName)) LIKE :pattern
+               OR p.curp = :curp
+               OR EXISTS (SELECT u.id FROM User u WHERE u.person = p AND LOWER(u.email) LIKE :pattern))
+            """,
+           countQuery = """
+            SELECT COUNT(s) FROM Student s JOIN s.person p
+            WHERE s.teacherId = :teacherId
+              AND (LOWER(p.firstName) LIKE :pattern
+               OR LOWER(p.middleName) LIKE :pattern
+               OR LOWER(p.lastName) LIKE :pattern
+               OR LOWER(p.secondLastName) LIKE :pattern
+               OR LOWER(CONCAT(p.firstName, ' ', p.lastName)) LIKE :pattern
+               OR p.curp = :curp
+               OR EXISTS (SELECT u.id FROM User u WHERE u.person = p AND LOWER(u.email) LIKE :pattern))
+            """)
+    Page<Student> searchByTeacher(@Param("teacherId") Long teacherId, @Param("pattern") String pattern,
+                                  @Param("curp") String curp, Pageable pageable);
 }

@@ -5,7 +5,10 @@ import lombok.Builder;
 
 import java.util.List;
 
-/** Expediente del estudiante (forma de la sección 6.3 de la spec, más qrCode para el login por QR). */
+/**
+ * Expediente del estudiante (forma de la sección 6.3 de la spec, más qrCode para el login por QR
+ * y teacherId/teacherName del docente asignado).
+ */
 @Builder
 public record StudentResponseDTO(
     Long id,
@@ -14,6 +17,8 @@ public record StudentResponseDTO(
     List<StudentRelativeDTO> relatives,
     Long profile,
     String profileName,
+    Long teacherId,
+    String teacherName,
     String email,
     @JsonProperty("isActive") Boolean isActive,
     String qrCode,

@@ -40,7 +40,7 @@ public record StudentPersonDTO(
     @Pattern(regexp = ValidationPatterns.GENDER_STUDENT, message = "El género debe ser 'M' (Masculino) o 'F' (Femenino).")
     String gender,
 
-    @Pattern(regexp = ValidationPatterns.PHONE_10, message = "El teléfono debe tener exactamente 10 dígitos.")
+    @Pattern(regexp = ValidationPatterns.PHONE_10, message = "El teléfono debe tener 10 dígitos (se permiten espacios o guiones como separadores).")
     String phone,
 
     @URL(message = "imageUrl debe ser una URL válida.")
