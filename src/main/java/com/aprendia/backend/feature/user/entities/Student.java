@@ -31,8 +31,9 @@ public class Student {
     @Column(name = "profile_id")
     private Integer profileId;
 
-    @Column(name = "educator_id")
-    private Long educatorId;
+    /** Docente asignado (users.id con rol DOCENTE_AULA). FK con ON DELETE SET NULL (V22). */
+    @Column(name = "teacher_id")
+    private Long teacherId;
 
     @Column(name = "qr_url")
     private String qrUrl;

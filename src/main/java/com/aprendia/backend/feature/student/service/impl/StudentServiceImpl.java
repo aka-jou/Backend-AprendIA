@@ -3,6 +3,7 @@ package com.aprendia.backend.feature.student.service.impl;
 import com.aprendia.backend.common.dto.PagedResponse;
 import com.aprendia.backend.common.security.RoleNames;
 import com.aprendia.backend.common.util.DateFormats;
+import com.aprendia.backend.common.util.PhoneNumbers;
 import com.aprendia.backend.exception.BadRequestException;
 import com.aprendia.backend.exception.ResourceNotFoundException;
 import com.aprendia.backend.feature.catalogs.entities.Municipality;
@@ -20,6 +21,7 @@ import com.aprendia.backend.feature.student.dto.StudentResponseDTO;
 import com.aprendia.backend.feature.student.service.StudentService;
 import com.aprendia.backend.feature.user.entities.Address;
 import com.aprendia.backend.feature.user.entities.Person;
+import com.aprendia.backend.feature.user.entities.RelativeAddress;
 import com.aprendia.backend.feature.user.entities.Student;
 import com.aprendia.backend.feature.user.entities.StudentRelative;
 import com.aprendia.backend.feature.user.entities.User;
@@ -29,6 +31,9 @@ import com.aprendia.backend.feature.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,6 +46,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -83,8 +89,34 @@ public class StudentServiceImpl implements StudentService {
         } else {
             page = studentRepository.findAll(pageable);
         }
+        return toPagedResponse(page);
+    }
 
-        // Cuentas de usuario y nombres de perfil de toda la página en 2 consultas (evita N+1)
+    /**
+     * Alumnos asignados a un docente. ADMINISTRADOR puede consultar cualquier docente;
+     * DOCENTE_AULA solo puede consultar su propio id (otro id responde 403).
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public PagedResponse<StudentResponseDTO> getStudentsByTeacher(Long teacherId, String query, Pageable pageable) {
+        User teacher = userRepository.findById(teacherId)
+                .filter(this::isTeacher)
+                .orElseThrow(() -> new ResourceNotFoundException("Docente no encontrado con ID: " + teacherId));
+        assertCanViewTeacher(teacher);
+
+        Page<Student> page;
+        if (StringUtils.hasText(query)) {
+            String term = query.trim();
+            page = studentRepository.searchByTeacher(teacherId, "%" + term.toLowerCase(Locale.ROOT) + "%",
+                    term.toUpperCase(Locale.ROOT), pageable);
+        } else {
+            page = studentRepository.findByTeacherId(teacherId, pageable);
+        }
+        return toPagedResponse(page);
+    }
+
+    /** Cuentas, nombres de perfil y nombres de docente de toda la página en 3 consultas (evita N+1). */
+    private PagedResponse<StudentResponseDTO> toPagedResponse(Page<Student> page) {
         Set<Long> personIds = page.getContent().stream().map(s -> s.getPerson().getId()).collect(Collectors.toSet());
         Map<Long, User> usersByPerson = new HashMap<>();
         if (!personIds.isEmpty()) {
@@ -95,16 +127,22 @@ public class StudentServiceImpl implements StudentService {
         Map<Long, String> profileNames = new HashMap<>();
         profileRepository.findAllById(profileIds).forEach(p -> profileNames.put(p.getId(), p.getName()));
 
+        Set<Long> teacherIds = page.getContent().stream()
+                .map(Student::getTeacherId).filter(Objects::nonNull).collect(Collectors.toSet());
+        Map<Long, String> teacherNames = new HashMap<>();
+        userRepository.findAllById(teacherIds).forEach(t -> teacherNames.put(t.getId(), displayName(t)));
+
         return PagedResponse.fromPage(page.map(s -> toResponse(s,
                 usersByPerson.get(s.getPerson().getId()),
-                s.getProfileId() != null ? profileNames.get(s.getProfileId().longValue()) : null)));
+                s.getProfileId() != null ? profileNames.get(s.getProfileId().longValue()) : null,
+                s.getTeacherId() != null ? teacherNames.get(s.getTeacherId()) : null)));
     }
 
     @Override
     @Transactional(readOnly = true)
     public StudentResponseDTO getStudentById(Long id) {
         Student student = findOrThrow(id);
-        return toResponse(student, findAccount(student), profileName(student));
+        return toResponse(student, findAccount(student), profileName(student), teacherName(student.getTeacherId()));
     }
 
     // ------------------------------------------------------------------ alta
@@ -127,7 +165,9 @@ public class StudentServiceImpl implements StudentService {
         }
 
         Profile profile = resolveProfile(request.profile());
+        User teacher = resolveTeacher(request.teacherId());
         validateAddress(request.address());
+        validateRelativeAddresses(request.relatives());
         Role studentRole = roleRepository.findByName(RoleNames.STUDENT)
                 .orElseThrow(() -> new IllegalStateException("El rol " + RoleNames.STUDENT + " no está registrado en la base de datos."));
 
@@ -141,6 +181,7 @@ public class StudentServiceImpl implements StudentService {
         Student student = Student.builder()
                 .person(person)
                 .profileId(Math.toIntExact(profile.getId()))
+                .teacherId(teacher != null ? teacher.getId() : null)
                 .qrUrl(qrCode)
                 .build();
         Address address = new Address();
@@ -164,7 +205,7 @@ public class StudentServiceImpl implements StudentService {
                 .build();
         account = userRepository.save(account);
 
-        return toResponse(student, account, profile.getName());
+        return toResponse(student, account, profile.getName(), teacher != null ? displayName(teacher) : null);
     }
 
     // ------------------------------------------------------------------ actualización
@@ -187,12 +228,15 @@ public class StudentServiceImpl implements StudentService {
                 .ifPresent(other -> { throw new BadRequestException("El correo electrónico ya está registrado."); });
 
         Profile profile = resolveProfile(request.profile());
+        User teacher = resolveTeacher(request.teacherId());
         validateAddress(request.address());
+        validateRelativeAddresses(request.relatives());
 
         applyPerson(person, request.person(), curp);
         personRepository.save(person);
 
         student.setProfileId(Math.toIntExact(profile.getId()));
+        student.setTeacherId(teacher != null ? teacher.getId() : null);
         Address address = student.getAddress();
         if (address == null) {
             address = new Address();
@@ -216,7 +260,7 @@ public class StudentServiceImpl implements StudentService {
             userRepository.save(account);
         }
 
-        return toResponse(student, account, profile.getName());
+        return toResponse(student, account, profile.getName(), teacher != null ? displayName(teacher) : null);
     }
 
     // ------------------------------------------------------------------ baja
@@ -260,6 +304,71 @@ public class StudentServiceImpl implements StudentService {
         return profile;
     }
 
+    /** teacherId opcional; si viene, debe ser un usuario activo con rol DOCENTE_AULA. */
+    private User resolveTeacher(Long teacherId) {
+        if (teacherId == null) {
+            return null;
+        }
+        User teacher = userRepository.findById(teacherId)
+                .orElseThrow(() -> new BadRequestException("El docente con ID " + teacherId + " no existe."));
+        if (!isTeacher(teacher)) {
+            throw new BadRequestException("El usuario con ID " + teacherId + " no tiene el rol DOCENTE_AULA.");
+        }
+        if (!teacher.isActive()) {
+            throw new BadRequestException("El docente con ID " + teacherId + " está inactivo.");
+        }
+        return teacher;
+    }
+
+    private boolean isTeacher(User user) {
+        return user.getRoles().stream().anyMatch(r -> RoleNames.DOCENTE_AULA.equals(r.getName()));
+    }
+
+    private void assertCanViewTeacher(User teacher) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) {
+            throw new AccessDeniedException("Sesión no autenticada.");
+        }
+        boolean isAdmin = auth.getAuthorities().stream().anyMatch(a -> RoleNames.ADMINISTRADOR.equals(a.getAuthority()));
+        if (!isAdmin && !teacher.getUsername().equalsIgnoreCase(auth.getName())) {
+            throw new AccessDeniedException("Un docente solo puede consultar sus propios alumnos.");
+        }
+    }
+
+    private String teacherName(Long teacherId) {
+        if (teacherId == null) {
+            return null;
+        }
+        return userRepository.findById(teacherId).map(this::displayName).orElse(null);
+    }
+
+    /** Nombre completo de la persona vinculada al usuario; si no tiene persona, su username. */
+    private String displayName(User user) {
+        Person p = user.getPerson();
+        if (p == null) {
+            return user.getUsername();
+        }
+        return fullName(p.getFirstName(), p.getMiddleName(), p.getLastName(), p.getSecondLastName());
+    }
+
+    private String fullName(String... parts) {
+        StringJoiner joiner = new StringJoiner(" ");
+        for (String part : parts) {
+            if (part != null && !part.isBlank()) {
+                joiner.add(part.trim());
+            }
+        }
+        return joiner.toString();
+    }
+
+    private void validateRelativeAddresses(List<StudentRelativeDTO> relatives) {
+        for (StudentRelativeDTO relative : relatives) {
+            if (relative.address() != null) {
+                validateAddress(relative.address());
+            }
+        }
+    }
+
     /** El estado debe existir y el municipio debe pertenecer a ese estado. */
     private void validateAddress(StudentAddressDTO address) {
         if (!stateRepository.existsById(address.stateId())) {
@@ -281,7 +390,7 @@ public class StudentServiceImpl implements StudentService {
         person.setCurp(curp);
         person.setBirthDate(DateFormats.startOfDay(dto.birthDate()));
         person.setGender(dto.gender().toUpperCase(Locale.ROOT));
-        person.setPhone(blankToNull(dto.phone()));
+        person.setPhone(PhoneNumbers.normalize(dto.phone()));
         person.setImageUrl(blankToNull(dto.imageUrl()));
     }
 
@@ -299,16 +408,75 @@ public class StudentServiceImpl implements StudentService {
     private void replaceRelatives(Student student, List<StudentRelativeDTO> relatives) {
         student.getRelatives().clear();
         for (StudentRelativeDTO dto : relatives) {
+            String firstName = dto.firstName().trim();
+            String middleName = blankToNull(dto.middleName());
+            String lastName = dto.lastName().trim();
+            String secondLastName = blankToNull(dto.secondLastName());
+            String curp = blankToNull(dto.curp());
+            String gender = blankToNull(dto.gender());
+            String email = blankToNull(dto.email());
+
             student.getRelatives().add(StudentRelative.builder()
                     .student(student)
-                    .name(dto.name().trim())
+                    .name(fullName(firstName, middleName, lastName, secondLastName))
+                    .firstName(firstName)
+                    .middleName(middleName)
+                    .lastName(lastName)
+                    .secondLastName(secondLastName)
+                    .curp(curp != null ? curp.toUpperCase(Locale.ROOT) : null)
+                    .birthDate(dto.birthDate())
+                    .gender(gender != null ? gender.toUpperCase(Locale.ROOT) : null)
+                    .phone(PhoneNumbers.normalize(dto.phone()))
+                    .email(email != null ? email.toLowerCase(Locale.ROOT) : null)
                     .relationship(dto.relationship().trim())
-                    .phone(blankToNull(dto.phone()))
+                    .address(toRelativeAddress(dto.address()))
                     .build());
         }
     }
 
-    private StudentResponseDTO toResponse(Student student, User account, String profileName) {
+    private RelativeAddress toRelativeAddress(StudentAddressDTO dto) {
+        if (dto == null) {
+            return null;
+        }
+        return RelativeAddress.builder()
+                .street(dto.street().trim())
+                .exteriorNumber(dto.exteriorNumber().trim())
+                .settlementType(blankToNull(dto.settlementType()))
+                .settlement(dto.settlement().trim())
+                .municipalityId(Math.toIntExact(dto.municipalityId()))
+                .stateId(Math.toIntExact(dto.stateId()))
+                .zipCode(dto.zipCode())
+                .build();
+    }
+
+    private StudentRelativeDTO toRelativeDTO(StudentRelative r) {
+        RelativeAddress a = r.getAddress();
+        StudentAddressDTO address = a == null ? null : StudentAddressDTO.builder()
+                .street(a.getStreet())
+                .exteriorNumber(a.getExteriorNumber())
+                .settlementType(a.getSettlementType())
+                .settlement(a.getSettlement())
+                .municipalityId(a.getMunicipalityId() != null ? a.getMunicipalityId().longValue() : null)
+                .stateId(a.getStateId() != null ? a.getStateId().longValue() : null)
+                .zipCode(a.getZipCode())
+                .build();
+        return StudentRelativeDTO.builder()
+                .curp(r.getCurp())
+                .firstName(r.getFirstName())
+                .middleName(r.getMiddleName())
+                .lastName(r.getLastName())
+                .secondLastName(r.getSecondLastName())
+                .name(r.getName())
+                .birthDate(r.getBirthDate())
+                .gender(r.getGender())
+                .phone(r.getPhone())
+                .email(r.getEmail())
+                .relationship(r.getRelationship())
+                .address(address)
+                .build();
+    }
+
+    private StudentResponseDTO toResponse(Student student, User account, String profileName, String teacherName) {
         Person p = student.getPerson();
         Address a = student.getAddress();
 
@@ -334,9 +502,7 @@ public class StudentServiceImpl implements StudentService {
                 .zipCode(a.getZipCode())
                 .build();
 
-        List<StudentRelativeDTO> relatives = student.getRelatives().stream()
-                .map(r -> StudentRelativeDTO.builder().name(r.getName()).relationship(r.getRelationship()).phone(r.getPhone()).build())
-                .toList();
+        List<StudentRelativeDTO> relatives = student.getRelatives().stream().map(this::toRelativeDTO).toList();
 
         return StudentResponseDTO.builder()
                 .id(student.getId())
@@ -345,6 +511,8 @@ public class StudentServiceImpl implements StudentService {
                 .relatives(relatives)
                 .profile(student.getProfileId() != null ? student.getProfileId().longValue() : null)
                 .profileName(profileName)
+                .teacherId(student.getTeacherId())
+                .teacherName(teacherName)
                 .email(account != null ? account.getEmail() : null)
                 .isActive(account != null ? account.isActive() : null)
                 .qrCode(student.getQrUrl())

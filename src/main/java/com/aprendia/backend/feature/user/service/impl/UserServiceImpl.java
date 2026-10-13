@@ -4,6 +4,7 @@ import com.aprendia.backend.common.dto.PagedResponse;
 import com.aprendia.backend.common.security.CurrentUser;
 import com.aprendia.backend.common.security.RoleNames;
 import com.aprendia.backend.common.util.DateFormats;
+import com.aprendia.backend.common.util.PhoneNumbers;
 import com.aprendia.backend.exception.BadRequestException;
 import com.aprendia.backend.exception.ResourceNotFoundException;
 import com.aprendia.backend.feature.catalogs.entities.Dependency;
@@ -244,7 +245,7 @@ public class UserServiceImpl implements UserService {
         person.setSecondLastName(blankToNull(persona.secondSurname()));
         person.setBirthDate(DateFormats.startOfDay(persona.birthDate()));
         person.setGender(persona.gender().toUpperCase(Locale.ROOT));
-        person.setPhone(persona.phone());
+        person.setPhone(PhoneNumbers.normalize(persona.phone()));
         person.setIneNumber(blankToNull(assignment.ineNumber()));
         person.setImageUrl(blankToNull(assignment.photoUrl()));
     }

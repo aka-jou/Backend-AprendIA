@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/v1/students")
-@Tag(name = "Estudiantes", description = "Expediente, domicilio y familiares de los alumnos (Especificación v2.0, Módulo 4). Requieren JWT y rol ADMINISTRADOR.")
+@Tag(name = "Estudiantes", description = "Expediente, domicilio, familiares y docente asignado de los alumnos (Especificación v2.0, Módulo 4).")
 public class StudentController {
 
     @Autowired

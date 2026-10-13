@@ -13,8 +13,12 @@ public final class ValidationPatterns {
      */
     public static final String CURP = "^[A-Za-z]{4}\\d{6}[HMXhmx][A-Za-z]{5}[A-Za-z0-9]\\d$";
 
-    /** Teléfono a 10 dígitos, sin espacios ni guiones. */
-    public static final String PHONE_10 = "^\\d{10}$";
+    /**
+     * Teléfono a 10 dígitos. Se aceptan espacios o guiones como separadores en los formatos
+     * 9611204821, 961 120 4821 y 961-120-4821; el servicio guarda solo los 10 dígitos
+     * (ver {@link com.aprendia.backend.common.util.PhoneNumbers}).
+     */
+    public static final String PHONE_10 = "^\\d{3}[ -]?\\d{3}[ -]?\\d{4}$";
 
     /** Código postal a 5 dígitos. */
     public static final String ZIP_CODE = "^\\d{5}$";

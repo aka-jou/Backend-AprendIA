@@ -46,6 +46,6 @@ public record UserPersonaDTO(
     String email,
 
     @NotBlank(message = "El teléfono es obligatorio.")
-    @Pattern(regexp = ValidationPatterns.PHONE_10, message = "El teléfono debe tener exactamente 10 dígitos.")
+    @Pattern(regexp = ValidationPatterns.PHONE_10, message = "El teléfono debe tener 10 dígitos (se permiten espacios o guiones como separadores).")
     String phone
 ) {}
