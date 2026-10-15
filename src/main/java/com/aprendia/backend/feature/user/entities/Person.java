@@ -1,6 +1,8 @@
 package com.aprendia.backend.feature.user.entities;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -41,6 +43,8 @@ public class Person {
     @Column(name = "birth_date")
     private LocalDateTime birthDate;
 
+    // La columna es CHAR(1) (bpchar): sin SqlTypes.CHAR, ddl-auto=validate espera VARCHAR y falla.
+    @JdbcTypeCode(SqlTypes.CHAR)
     @Column(length = 1, columnDefinition = "CHAR(1)")
     private String gender;
 
