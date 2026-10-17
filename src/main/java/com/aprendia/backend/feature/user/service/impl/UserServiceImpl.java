@@ -246,7 +246,6 @@ public class UserServiceImpl implements UserService {
         person.setBirthDate(DateFormats.startOfDay(persona.birthDate()));
         person.setGender(persona.gender().toUpperCase(Locale.ROOT));
         person.setPhone(PhoneNumbers.normalize(persona.phone()));
-        person.setIneNumber(blankToNull(assignment.ineNumber()));
         person.setImageUrl(blankToNull(assignment.photoUrl()));
     }
 
@@ -285,7 +284,6 @@ public class UserServiceImpl implements UserService {
                 .roles(roles)
                 .dependency(user.getDependency() != null ? user.getDependency().getName() : null)
                 .idDependencia(user.getDependency() != null ? user.getDependency().getId() : null)
-                .ineNumber(person != null ? person.getIneNumber() : null)
                 .photoUrl(person != null ? person.getImageUrl() : null)
                 .build();
 

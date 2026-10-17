@@ -39,7 +39,6 @@ public record UserDetailDTO(
         List<String> roles,
         String dependency,
         Long idDependencia,
-        String ineNumber,
         String photoUrl
     ) {}
 }
