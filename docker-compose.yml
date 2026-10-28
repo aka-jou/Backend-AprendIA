@@ -8,7 +8,7 @@ services:
       - "${DB_PORT_EXT:-5432}:5432"
     environment:
       POSTGRES_USER: ${DB_USERNAME:-aprendia_app}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-Apr3nd1A_DB_!S3cur3Pa$$2026}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD en el archivo .env}
       POSTGRES_DB: ${DB_NAME:-aprendiadb}
     volumes:
       - db_data:/var/lib/postgresql/data
@@ -33,15 +33,15 @@ services:
       # Configuración de base de datos
       SPRING_DATASOURCE_URL: jdbc:postgresql://db-aprend-ia:5432/${DB_NAME:-aprendiadb}
       SPRING_DATASOURCE_USERNAME: ${DB_USERNAME:-aprendia_app}
-      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-Apr3nd1A_DB_!S3cur3Pa$$2026}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD en el archivo .env}
       
       # Inyectar perfiles activos (usamos prod por defecto para contenedores, o dev)
       SPRING_PROFILES_ACTIVE: prod
 
       # Variables de seguridad y JWT
-      JWT_SECRET: ${JWT_SECRET:-aprendia_super_secret_jwt_key_2026_secure_algorithm_for_signatures}
+      JWT_SECRET: ${JWT_SECRET:?Defina JWT_SECRET en el archivo .env}
       JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
-      ENCRYPTION_SECRET: ${ENCRYPTION_SECRET:-aprendia_encryption_secret_key_2026}
+      ENCRYPTION_SECRET: ${ENCRYPTION_SECRET:?Defina ENCRYPTION_SECRET en el archivo .env}
       
       # Rotación automática de API keys ("-" = desactivada)
       API_KEY_ROTATION_CRON: ${API_KEY_ROTATION_CRON:--}
