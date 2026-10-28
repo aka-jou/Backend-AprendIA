@@ -38,6 +38,12 @@ public final class ValidationPatterns {
     /** Género del módulo de estudiantes: M (Masculino), F (Femenino). */
     public static final String GENDER_STUDENT = "^[MFmf]$";
 
+    /**
+     * URL http(s) sin espacios. Acepta cadena vacía para los campos opcionales: el servicio la
+     * guarda como null. En los campos obligatorios se combina con {@code @NotBlank}.
+     */
+    public static final String HTTP_URL = "^(https?://\\S+)?$";
+
     /** Estado de un usuario tal como lo muestra el listado. */
     public static final String USER_STATUS = "^(Activo|Inactivo)$";
 }

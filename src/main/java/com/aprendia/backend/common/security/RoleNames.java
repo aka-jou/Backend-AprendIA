@@ -13,6 +13,7 @@ public final class RoleNames {
 
     public static final String ADMINISTRADOR = "ROLE_ADMINISTRADOR";
     public static final String DOCENTE_AULA = "ROLE_DOCENTE_AULA";
+    public static final String ASESOR_PEDAGOGICO = "ROLE_ASESOR_PEDAGOGICO";
     public static final String STUDENT = "ROLE_STUDENT";
 
     private RoleNames() {

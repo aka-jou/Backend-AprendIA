@@ -6,6 +6,7 @@ import com.aprendia.backend.exception.ResourceNotFoundException;
 import com.aprendia.backend.feature.catalogs.dto.ProfileRequestDTO;
 import com.aprendia.backend.feature.catalogs.dto.ProfileResponseDTO;
 import com.aprendia.backend.feature.catalogs.entities.Profile;
+import com.aprendia.backend.feature.catalogs.repository.LearningPathRepository;
 import com.aprendia.backend.feature.catalogs.repository.ProfileRepository;
 import com.aprendia.backend.feature.catalogs.service.ProfileService;
 import com.aprendia.backend.feature.user.repository.StudentRepository;
@@ -24,6 +25,9 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Autowired
     private StudentRepository studentRepository;
+
+    @Autowired
+    private LearningPathRepository learningPathRepository;
 
     @Override
     @Transactional
@@ -66,6 +70,9 @@ public class ProfileServiceImpl implements ProfileService {
         findOrThrow(id);
         if (studentRepository.existsByProfileId(Math.toIntExact(id))) {
             throw new ConflictException("No se puede eliminar el perfil porque hay estudiantes asignados a él. Desactívelo con status=false.");
+        }
+        if (learningPathRepository.existsByProfileId(id)) {
+            throw new ConflictException("No se puede eliminar el perfil porque hay rutas de aprendizaje dirigidas a él. Desactívelo con status=false.");
         }
         profileRepository.deleteById(id);
     }
