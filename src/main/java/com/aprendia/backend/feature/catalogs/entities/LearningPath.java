@@ -29,6 +29,15 @@ public class LearningPath {
     @JoinColumn(name = "metodology_id", nullable = false)
     private Metodology metodology;
 
+    /** Perfil de estudiante al que está dirigida la ruta (opcional; lo expone el árbol curricular). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "profile_id")
+    private Profile profile;
+
+    /** Imagen de portada de la ruta (opcional; la expone el árbol curricular). */
+    @Column(name = "image_url", length = 1000)
+    private String imageUrl;
+
     @Builder.Default
     @Column(nullable = false)
     private Boolean status = Boolean.TRUE;

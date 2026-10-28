@@ -12,13 +12,15 @@ import java.util.Optional;
 @Repository
 public interface LearningPathRepository extends JpaRepository<LearningPath, Long> {
 
-    // Carga la metodología en la misma consulta (evita N+1 al armar nombreMetodologia)
-    @EntityGraph(attributePaths = "metodology")
+    // Carga metodología y perfil en la misma consulta (evita N+1 al armar nombreMetodologia y nombrePerfil)
+    @EntityGraph(attributePaths = {"metodology", "profile"})
     List<LearningPath> findAllByOrderByIdAsc();
 
     @NonNull
-    @EntityGraph(attributePaths = "metodology")
+    @EntityGraph(attributePaths = {"metodology", "profile"})
     Optional<LearningPath> findById(@NonNull Long id);
 
     boolean existsByMetodologyId(Long metodologyId);
+
+    boolean existsByProfileId(Long profileId);
 }

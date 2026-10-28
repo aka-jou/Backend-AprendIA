@@ -18,7 +18,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/v1/catalogs/learning-paths")
-@Tag(name = "Catálogo de Rutas de Aprendizaje", description = "Rutas de aprendizaje ligadas a una metodología (Especificación v2.0, sección 5.2). Requieren JWT y rol ADMINISTRADOR.")
+@Tag(name = "Catálogo de Rutas de Aprendizaje", description = "Rutas de aprendizaje ligadas a una metodología (Especificación v2.0, sección 5.2), con perfil e imagen opcionales que expone el árbol curricular. Requieren JWT y rol ADMINISTRADOR.")
 public class LearningPathController {
 
     @Autowired
@@ -58,7 +58,7 @@ public class LearningPathController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMINISTRADOR')")
-    @Operation(summary = "Eliminar Ruta de aprendizaje", description = "Responde 409 si otros registros lo referencian; en ese caso use status=false.")
+    @Operation(summary = "Eliminar Ruta de aprendizaje", description = "Responde 409 si tiene cuadernillos asociados (incluidos los dados de baja); en ese caso use status=false.")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         learningPathService.deleteLearningPath(id);
         return ResponseEntity.ok(ApiResponse.ok(null, "Ruta de aprendizaje eliminada exitosamente."));

@@ -8,5 +8,8 @@ public record LearningPathResponseDTO(
     String nombre,
     Long idMetodologia,
     String nombreMetodologia,
-    Boolean status
+    Boolean status,
+    Long idPerfil,
+    String nombrePerfil,
+    String urlImagen
 ) {}
