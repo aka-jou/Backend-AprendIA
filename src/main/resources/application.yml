@@ -23,7 +23,9 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
-  # Correo (envío del código OTP). Sin MAIL_HOST el envío falla de forma explícita.
+  # Correo SMTP (solo si MAIL_PROVIDER=smtp). Sin MAIL_HOST el envío falla de forma explícita.
+  # Los tiempos de espera evitan que una petición quede colgada si el servidor SMTP no responde
+  # (Railway fuera del plan Pro bloquea el SMTP saliente; ahí usar MAIL_PROVIDER=resend o brevo).
   mail:
     host: ${MAIL_HOST:}
     port: ${MAIL_PORT:587}
@@ -32,6 +34,9 @@ spring:
     properties:
       mail.smtp.auth: true
       mail.smtp.starttls.enable: true
+      mail.smtp.connectiontimeout: 5000
+      mail.smtp.timeout: 10000
+      mail.smtp.writetimeout: 10000
 
   # Flyway Migration Configuration
   flyway:
@@ -67,7 +72,12 @@ app:
     # Obligatorio, sin valor por defecto. De él se deriva la llave de cifrado de los campos sensibles
     secret: ${ENCRYPTION_SECRET}
   mail:
+    # Canal de entrega del OTP, en minúsculas: smtp (por defecto) | resend | brevo
+    provider: ${MAIL_PROVIDER:smtp}
+    # Clave de la API del proveedor HTTP (resend / brevo). No se usa con smtp.
+    api-key: ${MAIL_API_KEY:}
     from: ${MAIL_FROM:no-reply@aprendia.local}
+    from-name: ${MAIL_FROM_NAME:AprendIA}
   otp:
     expiration-seconds: ${OTP_EXPIRATION_SECONDS:300}
     cooldown-seconds: ${OTP_COOLDOWN_SECONDS:45}
