@@ -6,6 +6,7 @@ import com.aprendia.backend.feature.curriculum.dto.TopicRequestDTO;
 import com.aprendia.backend.feature.curriculum.dto.TopicResponseDTO;
 import com.aprendia.backend.feature.curriculum.entities.Topic;
 import com.aprendia.backend.feature.curriculum.repository.LearningResourceRepository;
+import com.aprendia.backend.feature.curriculum.repository.ReactivoRepository;
 import com.aprendia.backend.feature.curriculum.repository.TopicRepository;
 import com.aprendia.backend.feature.curriculum.service.CurriculumSupport;
 import com.aprendia.backend.feature.curriculum.service.TopicService;
@@ -27,6 +28,9 @@ public class TopicServiceImpl implements TopicService {
     private LearningResourceRepository learningResourceRepository;
 
     @Autowired
+    private ReactivoRepository reactivoRepository;
+
+    @Autowired
     private CurriculumSupport support;
 
     @Override
@@ -39,17 +43,19 @@ public class TopicServiceImpl implements TopicService {
         if (topics.isEmpty()) {
             return List.of();
         }
-        Map<Long, Long> resourceCounts = CurriculumSupport.toCountMap(
-                learningResourceRepository.countByTopicIds(topics.stream().map(Topic::getId).toList()));
+        List<Long> topicIds = topics.stream().map(Topic::getId).toList();
+        Map<Long, Long> resourceCounts = CurriculumSupport.toCountMap(learningResourceRepository.countByTopicIds(topicIds));
+        Map<Long, Long> reactivoCounts = support.countReactivos(topicIds);
         return topics.stream()
-                .map(topic -> mapToResponse(topic, CurriculumSupport.countFor(resourceCounts, topic.getId())))
+                .map(topic -> mapToResponse(topic, CurriculumSupport.countFor(resourceCounts, topic.getId()),
+                        CurriculumSupport.countFor(reactivoCounts, topic.getId())))
                 .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public TopicResponseDTO getTopicById(Long id) {
-        return mapToResponse(support.findVisibleTopic(id), countResources(id));
+        return mapToResponse(support.findVisibleTopic(id), countResources(id), countReactivos(id));
     }
 
     @Override
@@ -59,7 +65,7 @@ public class TopicServiceImpl implements TopicService {
         apply(topic, request);
         topic.setSortOrder(request.orden() != null ? request.orden() : 1);
         topic.markCreated(CurrentUser.username(), LocalDateTime.now());
-        return mapToResponse(topicRepository.save(topic), 0L);
+        return mapToResponse(topicRepository.save(topic), 0L, 0L);
     }
 
     @Override
@@ -71,10 +77,10 @@ public class TopicServiceImpl implements TopicService {
             topic.setSortOrder(request.orden());
         }
         topic.markUpdated(CurrentUser.username(), LocalDateTime.now());
-        return mapToResponse(topicRepository.save(topic), countResources(id));
+        return mapToResponse(topicRepository.save(topic), countResources(id), countReactivos(id));
     }
 
-    /** Baja lógica del tema y, en cascada, de sus recursos. */
+    /** Baja lógica del tema y, en cascada, de sus recursos y reactivos. */
     @Override
     @Transactional
     public void deleteTopic(Long id) {
@@ -82,6 +88,7 @@ public class TopicServiceImpl implements TopicService {
         LocalDateTime now = LocalDateTime.now();
         String username = CurrentUser.username();
         learningResourceRepository.softDelete(null, id, null, null, now, username);
+        reactivoRepository.softDelete(null, id, null, null, now, username);
         topicRepository.softDelete(id, null, null, now, username);
     }
 
@@ -97,7 +104,11 @@ public class TopicServiceImpl implements TopicService {
                 CurriculumSupport.toCountMap(learningResourceRepository.countByTopicIds(List.of(topicId))), topicId);
     }
 
-    private TopicResponseDTO mapToResponse(Topic topic, long totalRecursos) {
+    private long countReactivos(Long topicId) {
+        return CurriculumSupport.countFor(support.countReactivos(List.of(topicId)), topicId);
+    }
+
+    private TopicResponseDTO mapToResponse(Topic topic, long totalRecursos, long totalReactivos) {
         return TopicResponseDTO.builder()
                 .idTema(topic.getId())
                 .idUnidad(topic.getUnit().getId())
@@ -106,7 +117,7 @@ public class TopicServiceImpl implements TopicService {
                 .urlImagen(topic.getImageUrl())
                 .orden(topic.getSortOrder())
                 .totalRecursos(totalRecursos)
-                .totalReactivos(CurriculumSupport.PENDING_REACTIVOS_COUNT)
+                .totalReactivos(totalReactivos)
                 .createdAt(DateFormats.isoInstant(topic.getCreatedAt()))
                 .updatedAt(DateFormats.isoInstant(topic.getUpdatedAt()))
                 .build();

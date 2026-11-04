@@ -59,7 +59,7 @@ public class StudentController {
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMINISTRADOR')")
     @ApiMessage("Estudiante actualizado exitosamente.")
-    @Operation(summary = "Actualizar datos del estudiante o familiares", description = "Reemplazo completo: los familiares que no se envíen se eliminan.")
+    @Operation(summary = "Actualizar datos del estudiante o familiares", description = "Reemplazo completo. En relatives[], un familiar con personId (o con una CURP ya registrada) se vincula sin duplicarse; los que no se envíen se desvinculan, sin borrar su persona.")
     public ResponseEntity<StudentResponseDTO> updateStudent(@PathVariable Long id, @Valid @RequestBody StudentRequestDTO request) {
         return ResponseEntity.ok(studentService.updateStudent(id, request));
     }

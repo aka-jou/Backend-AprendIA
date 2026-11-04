@@ -71,7 +71,7 @@ public class WorkbookController {
     @DeleteMapping("/{id}")
     @PreAuthorize(MANAGE)
     @Operation(summary = "Eliminar cuadernillo",
-            description = "Baja lógica: el cuadernillo y sus unidades, temas y recursos dejan de existir para la API "
+            description = "Baja lógica: el cuadernillo y sus unidades, temas, recursos y reactivos dejan de existir para la API "
                     + "(listados y GET responden sin ellos / 404), pero se conservan en la base. Para solo ocultarlo use PUT con status=false.")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         workbookService.deleteWorkbook(id);

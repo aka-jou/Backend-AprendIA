@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 
 /**
  * Árbol curricular de una ruta en una sola petición. Se arma con un número fijo de consultas
- * (ruta, cuadernillos, unidades, temas y conteo de recursos), sin importar el tamaño del árbol.
+ * (ruta, cuadernillos, unidades, temas y conteos de recursos y reactivos), sin importar el tamaño del árbol.
  */
 @Service
 public class CurriculumTreeServiceImpl implements CurriculumTreeService {
@@ -66,10 +66,11 @@ public class CurriculumTreeServiceImpl implements CurriculumTreeService {
         List<Topic> topics = units.isEmpty()
                 ? List.of()
                 : topicRepository.findByUnitIds(units.stream().map(Unit::getId).toList());
+        List<Long> topicIds = topics.stream().map(Topic::getId).toList();
         Map<Long, Long> resourceCounts = topics.isEmpty()
                 ? Map.of()
-                : CurriculumSupport.toCountMap(
-                        learningResourceRepository.countByTopicIds(topics.stream().map(Topic::getId).toList()));
+                : CurriculumSupport.toCountMap(learningResourceRepository.countByTopicIds(topicIds));
+        Map<Long, Long> reactivoCounts = support.countReactivos(topicIds);
 
         // Las consultas ya vienen ordenadas por (orden, id); groupingBy conserva ese orden dentro de cada grupo
         Map<Long, List<Unit>> unitsByWorkbook = units.stream()
@@ -88,7 +89,7 @@ public class CurriculumTreeServiceImpl implements CurriculumTreeService {
                         .status(workbook.getStatus())
                         .orden(workbook.getSortOrder())
                         .unidades(unitsByWorkbook.getOrDefault(workbook.getId(), List.of()).stream()
-                                .map(unit -> toUnitNode(unit, topicsByUnit, resourceCounts))
+                                .map(unit -> toUnitNode(unit, topicsByUnit, resourceCounts, reactivoCounts))
                                 .toList())
                         .build())
                 .toList();
@@ -104,7 +105,8 @@ public class CurriculumTreeServiceImpl implements CurriculumTreeService {
                 .build();
     }
 
-    private static UnitNode toUnitNode(Unit unit, Map<Long, List<Topic>> topicsByUnit, Map<Long, Long> resourceCounts) {
+    private static UnitNode toUnitNode(Unit unit, Map<Long, List<Topic>> topicsByUnit, Map<Long, Long> resourceCounts,
+                                       Map<Long, Long> reactivoCounts) {
         return UnitNode.builder()
                 .idUnidad(unit.getId())
                 .nombre(unit.getName())
@@ -118,7 +120,7 @@ public class CurriculumTreeServiceImpl implements CurriculumTreeService {
                                 .urlImagen(topic.getImageUrl())
                                 .orden(topic.getSortOrder())
                                 .totalRecursos(CurriculumSupport.countFor(resourceCounts, topic.getId()))
-                                .totalReactivos(CurriculumSupport.PENDING_REACTIVOS_COUNT)
+                                .totalReactivos(CurriculumSupport.countFor(reactivoCounts, topic.getId()))
                                 .build())
                         .toList())
                 .build();

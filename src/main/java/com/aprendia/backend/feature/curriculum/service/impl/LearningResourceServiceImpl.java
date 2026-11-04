@@ -8,6 +8,9 @@ import com.aprendia.backend.feature.curriculum.dto.ResourceResponseDTO;
 import com.aprendia.backend.feature.curriculum.dto.ResourceSlideDTO;
 import com.aprendia.backend.feature.curriculum.entities.LearningResource;
 import com.aprendia.backend.feature.curriculum.entities.ResourceContent;
+import com.aprendia.backend.exception.BadRequestException;
+import com.aprendia.backend.feature.curriculum.entities.Layout;
+import com.aprendia.backend.feature.curriculum.repository.LayoutRepository;
 import com.aprendia.backend.feature.curriculum.repository.LearningResourceRepository;
 import com.aprendia.backend.feature.curriculum.service.CurriculumSupport;
 import com.aprendia.backend.feature.curriculum.service.LearningResourceService;
@@ -24,6 +27,9 @@ public class LearningResourceServiceImpl implements LearningResourceService {
 
     @Autowired
     private LearningResourceRepository learningResourceRepository;
+
+    @Autowired
+    private LayoutRepository layoutRepository;
 
     @Autowired
     private CurriculumSupport support;
@@ -68,10 +74,26 @@ public class LearningResourceServiceImpl implements LearningResourceService {
 
     private void apply(LearningResource resource, ResourceRequestDTO request) {
         resource.setTopic(support.requireTopicReference(request.idTema()));
-        resource.setLayoutId(request.idLayout());
+        resource.setLayoutId(resolveLayoutId(request.idLayout(), resource.getLayoutId()));
         resource.setTitle(request.titulo().trim());
         resource.setImageUrl(CurriculumSupport.blankToNull(request.urlImagen()));
         resource.setContent(toEntity(request.contenido()));
+    }
+
+    /**
+     * idLayout es opcional; si viene debe existir en el catálogo de layouts y estar activo. Un recurso
+     * que ya usaba un layout que después se desactivó puede seguir guardándose con él.
+     */
+    private Integer resolveLayoutId(Integer idLayout, Integer currentLayoutId) {
+        if (idLayout == null) {
+            return null;
+        }
+        Layout layout = layoutRepository.findById(idLayout.longValue())
+                .orElseThrow(() -> new BadRequestException("El layout con ID " + idLayout + " no existe."));
+        if (!Boolean.TRUE.equals(layout.getActive()) && !idLayout.equals(currentLayoutId)) {
+            throw new BadRequestException("El layout con ID " + idLayout + " está inactivo.");
+        }
+        return idLayout;
     }
 
     /** Las diapositivas se guardan ordenadas por "order" para que el frontend las reciba en secuencia. */

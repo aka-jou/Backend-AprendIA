@@ -12,7 +12,7 @@ public record ResourceRequestDTO(
     @Positive(message = "idTema debe ser un número positivo.")
     Long idTema,
 
-    /** Opcional: la spec no define el catálogo de layouts; se guarda el entero que envía el frontend. */
+    /** Opcional. Si viene, debe ser un layout existente y activo del catálogo (/layouts). */
     @Min(value = 1, message = "idLayout debe ser mayor o igual a 1.")
     Integer idLayout,
 

@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * Domicilio de un familiar, embebido en student_relatives (columnas address_*).
+ * Domicilio de un familiar, embebido en persons (columnas address_*, V28; antes en student_relatives).
  * Mismos campos y mismo cifrado que el domicilio del estudiante ({@link Address}).
  */
 @Embeddable
