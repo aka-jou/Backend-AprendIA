@@ -6,22 +6,19 @@ import com.aprendia.backend.common.util.DateFormats;
 import com.aprendia.backend.common.util.PhoneNumbers;
 import com.aprendia.backend.exception.BadRequestException;
 import com.aprendia.backend.exception.ResourceNotFoundException;
-import com.aprendia.backend.feature.catalogs.entities.Municipality;
 import com.aprendia.backend.feature.catalogs.entities.Profile;
 import com.aprendia.backend.feature.catalogs.entities.Role;
-import com.aprendia.backend.feature.catalogs.repository.MunicipalityRepository;
 import com.aprendia.backend.feature.catalogs.repository.ProfileRepository;
 import com.aprendia.backend.feature.catalogs.repository.RoleRepository;
-import com.aprendia.backend.feature.catalogs.repository.StateRepository;
 import com.aprendia.backend.feature.student.dto.StudentAddressDTO;
 import com.aprendia.backend.feature.student.dto.StudentPersonDTO;
 import com.aprendia.backend.feature.student.dto.StudentRelativeDTO;
 import com.aprendia.backend.feature.student.dto.StudentRequestDTO;
 import com.aprendia.backend.feature.student.dto.StudentResponseDTO;
+import com.aprendia.backend.feature.student.service.StudentRelativeSupport;
 import com.aprendia.backend.feature.student.service.StudentService;
 import com.aprendia.backend.feature.user.entities.Address;
 import com.aprendia.backend.feature.user.entities.Person;
-import com.aprendia.backend.feature.user.entities.RelativeAddress;
 import com.aprendia.backend.feature.user.entities.Student;
 import com.aprendia.backend.feature.user.entities.StudentRelative;
 import com.aprendia.backend.feature.user.entities.User;
@@ -39,6 +36,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -69,13 +67,10 @@ public class StudentServiceImpl implements StudentService {
     private ProfileRepository profileRepository;
 
     @Autowired
-    private StateRepository stateRepository;
-
-    @Autowired
-    private MunicipalityRepository municipalityRepository;
-
-    @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private StudentRelativeSupport relativeSupport;
 
     // ------------------------------------------------------------------ consultas
 
@@ -167,7 +162,6 @@ public class StudentServiceImpl implements StudentService {
         Profile profile = resolveProfile(request.profile());
         User teacher = resolveTeacher(request.teacherId());
         validateAddress(request.address());
-        validateRelativeAddresses(request.relatives());
         Role studentRole = roleRepository.findByName(RoleNames.STUDENT)
                 .orElseThrow(() -> new IllegalStateException("El rol " + RoleNames.STUDENT + " no está registrado en la base de datos."));
 
@@ -230,7 +224,6 @@ public class StudentServiceImpl implements StudentService {
         Profile profile = resolveProfile(request.profile());
         User teacher = resolveTeacher(request.teacherId());
         validateAddress(request.address());
-        validateRelativeAddresses(request.relatives());
 
         applyPerson(person, request.person(), curp);
         personRepository.save(person);
@@ -361,25 +354,9 @@ public class StudentServiceImpl implements StudentService {
         return joiner.toString();
     }
 
-    private void validateRelativeAddresses(List<StudentRelativeDTO> relatives) {
-        for (StudentRelativeDTO relative : relatives) {
-            if (relative.address() != null) {
-                validateAddress(relative.address());
-            }
-        }
-    }
-
     /** El estado debe existir y el municipio debe pertenecer a ese estado. */
     private void validateAddress(StudentAddressDTO address) {
-        if (!stateRepository.existsById(address.stateId())) {
-            throw new BadRequestException("El estado con ID " + address.stateId() + " no existe en el catálogo.");
-        }
-        Municipality municipality = municipalityRepository.findById(address.municipalityId())
-                .orElseThrow(() -> new BadRequestException("El municipio con ID " + address.municipalityId() + " no existe en el catálogo."));
-        if (municipality.getState() == null || !address.stateId().equals(municipality.getState().getId())) {
-            throw new BadRequestException("El municipio con ID " + address.municipalityId()
-                    + " no pertenece al estado con ID " + address.stateId() + ".");
-        }
+        relativeSupport.validateAddress(address);
     }
 
     private void applyPerson(Person person, StudentPersonDTO dto, String curp) {
@@ -404,76 +381,35 @@ public class StudentServiceImpl implements StudentService {
         address.setZipCode(dto.zipCode());
     }
 
-    /** Reemplazo completo: orphanRemoval elimina los familiares que ya no vienen en la petición. */
+    /**
+     * Reemplazo completo de relatives[] (spec de búsqueda por CURP, sección 3). Cada elemento se vincula
+     * a una persona sin duplicarla (ver {@link StudentRelativeSupport#resolvePerson}). Un familiar que ya
+     * estaba vinculado conserva su vínculo (y su relativeId); los que ya no vienen se desvinculan, pero
+     * su persona se conserva.
+     */
     private void replaceRelatives(Student student, List<StudentRelativeDTO> relatives) {
+        Map<Long, StudentRelative> current = new HashMap<>();
+        for (StudentRelative relative : student.getRelatives()) {
+            current.put(relative.getPerson().getId(), relative);
+        }
+        List<StudentRelative> result = new ArrayList<>();
+        Set<Long> seen = new HashSet<>();
+        for (int i = 0; i < relatives.size(); i++) {
+            StudentRelativeDTO dto = relatives.get(i);
+            String field = "relatives[" + i + "]";
+            Person person = relativeSupport.resolvePerson(dto, student.getPerson(), field);
+            if (!seen.add(person.getId())) {
+                throw new BadRequestException(field + ": el familiar (personId " + person.getId() + ") está repetido en la lista.");
+            }
+            StudentRelative relative = current.get(person.getId());
+            if (relative == null) {
+                relative = StudentRelative.builder().student(student).person(person).build();
+            }
+            relative.setRelationship(dto.relationship().trim());
+            result.add(relative);
+        }
         student.getRelatives().clear();
-        for (StudentRelativeDTO dto : relatives) {
-            String firstName = dto.firstName().trim();
-            String middleName = blankToNull(dto.middleName());
-            String lastName = dto.lastName().trim();
-            String secondLastName = blankToNull(dto.secondLastName());
-            String curp = blankToNull(dto.curp());
-            String gender = blankToNull(dto.gender());
-            String email = blankToNull(dto.email());
-
-            student.getRelatives().add(StudentRelative.builder()
-                    .student(student)
-                    .name(fullName(firstName, middleName, lastName, secondLastName))
-                    .firstName(firstName)
-                    .middleName(middleName)
-                    .lastName(lastName)
-                    .secondLastName(secondLastName)
-                    .curp(curp != null ? curp.toUpperCase(Locale.ROOT) : null)
-                    .birthDate(dto.birthDate())
-                    .gender(gender != null ? gender.toUpperCase(Locale.ROOT) : null)
-                    .phone(PhoneNumbers.normalize(dto.phone()))
-                    .email(email != null ? email.toLowerCase(Locale.ROOT) : null)
-                    .relationship(dto.relationship().trim())
-                    .address(toRelativeAddress(dto.address()))
-                    .build());
-        }
-    }
-
-    private RelativeAddress toRelativeAddress(StudentAddressDTO dto) {
-        if (dto == null) {
-            return null;
-        }
-        return RelativeAddress.builder()
-                .street(dto.street().trim())
-                .exteriorNumber(dto.exteriorNumber().trim())
-                .settlementType(blankToNull(dto.settlementType()))
-                .settlement(dto.settlement().trim())
-                .municipalityId(Math.toIntExact(dto.municipalityId()))
-                .stateId(Math.toIntExact(dto.stateId()))
-                .zipCode(dto.zipCode())
-                .build();
-    }
-
-    private StudentRelativeDTO toRelativeDTO(StudentRelative r) {
-        RelativeAddress a = r.getAddress();
-        StudentAddressDTO address = a == null ? null : StudentAddressDTO.builder()
-                .street(a.getStreet())
-                .exteriorNumber(a.getExteriorNumber())
-                .settlementType(a.getSettlementType())
-                .settlement(a.getSettlement())
-                .municipalityId(a.getMunicipalityId() != null ? a.getMunicipalityId().longValue() : null)
-                .stateId(a.getStateId() != null ? a.getStateId().longValue() : null)
-                .zipCode(a.getZipCode())
-                .build();
-        return StudentRelativeDTO.builder()
-                .curp(r.getCurp())
-                .firstName(r.getFirstName())
-                .middleName(r.getMiddleName())
-                .lastName(r.getLastName())
-                .secondLastName(r.getSecondLastName())
-                .name(r.getName())
-                .birthDate(r.getBirthDate())
-                .gender(r.getGender())
-                .phone(r.getPhone())
-                .email(r.getEmail())
-                .relationship(r.getRelationship())
-                .address(address)
-                .build();
+        student.getRelatives().addAll(result);
     }
 
     private StudentResponseDTO toResponse(Student student, User account, String profileName, String teacherName) {
@@ -502,7 +438,7 @@ public class StudentServiceImpl implements StudentService {
                 .zipCode(a.getZipCode())
                 .build();
 
-        List<StudentRelativeDTO> relatives = student.getRelatives().stream().map(this::toRelativeDTO).toList();
+        List<StudentRelativeDTO> relatives = student.getRelatives().stream().map(relativeSupport::toDto).toList();
 
         return StudentResponseDTO.builder()
                 .id(student.getId())

@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Builder;
 
@@ -14,24 +15,31 @@ import java.time.LocalDate;
 /**
  * Elemento de "relatives": tutor o familiar del alumno (entrada y salida).
  *
- * Obligatorios: firstName, lastName y relationship. El resto es opcional; si se envía vacío ("")
- * se guarda como null. {@code name} se ignora en la entrada: el servidor lo calcula a partir de las
- * partes del nombre y lo devuelve en la salida.
+ * Vinculación (spec de búsqueda por CURP, sección 3):
+ * - Con personId: se vincula esa persona tal cual; el resto de los datos de la persona se ignora.
+ * - Sin personId y con una CURP ya registrada: se vincula la persona de esa CURP (no se duplica).
+ * - Sin personId y sin CURP registrada: se crea la persona; firstName y lastName son obligatorios.
+ * relationship es obligatorio siempre. Los opcionales enviados vacíos ("") se guardan como null.
+ * {@code relativeId} y {@code name} son solo de salida.
  */
 @Builder
 public record StudentRelativeDTO(
+    /** Solo salida: ID del vínculo (student_relatives.id), el {relativeId} de /students/{id}/relatives. */
+    Long relativeId,
+
+    @Positive(message = "personId debe ser un número positivo.")
+    Long personId,
+
     @Pattern(regexp = "^$|" + ValidationPatterns.CURP,
              message = "La CURP del familiar debe tener exactamente 18 caracteres con formato válido.")
     String curp,
 
-    @NotBlank(message = "El primer nombre del familiar es obligatorio.")
     @Size(max = 100, message = "El primer nombre del familiar no puede superar los 100 caracteres.")
     String firstName,
 
     @Size(max = 100, message = "El segundo nombre del familiar no puede superar los 100 caracteres.")
     String middleName,
 
-    @NotBlank(message = "El primer apellido del familiar es obligatorio.")
     @Size(max = 100, message = "El primer apellido del familiar no puede superar los 100 caracteres.")
     String lastName,
 

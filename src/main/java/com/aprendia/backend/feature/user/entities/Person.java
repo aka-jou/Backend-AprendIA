@@ -11,6 +11,12 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+/**
+ * Persona: estudiante, usuario del personal o familiar/tutor. Un familiar es una sola fila aunque esté
+ * vinculado a varios estudiantes (hermanos); el vínculo y el parentesco están en {@link StudentRelative}.
+ * {@code email} y {@code address} solo se usan para familiares: el domicilio del estudiante está en
+ * {@link Address} y el correo de una cuenta, en {@link User}.
+ */
 @Entity
 @Table(name = "persons")
 @Getter
@@ -54,4 +60,10 @@ public class Person {
 
     @Column(name = "image_url")
     private String imageUrl;
+
+    @Column(length = 100)
+    private String email;
+
+    @Embedded
+    private RelativeAddress address;
 }
