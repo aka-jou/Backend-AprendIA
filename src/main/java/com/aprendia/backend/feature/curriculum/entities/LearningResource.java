@@ -26,7 +26,7 @@ public class LearningResource extends CurriculumAuditFields {
     @JoinColumn(name = "topic_id", nullable = false)
     private Topic topic;
 
-    /** "idLayout" de la spec: plantilla visual que interpreta el frontend. Sin catálogo en el backend. */
+    /** "idLayout" de la spec: llave foránea a layouts (V27). Se conserva como entero por compatibilidad con V25. */
     @Column(name = "layout_id")
     private Integer layoutId;
 

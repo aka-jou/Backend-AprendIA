@@ -6,6 +6,7 @@ import com.aprendia.backend.feature.curriculum.dto.UnitRequestDTO;
 import com.aprendia.backend.feature.curriculum.dto.UnitResponseDTO;
 import com.aprendia.backend.feature.curriculum.entities.Unit;
 import com.aprendia.backend.feature.curriculum.repository.LearningResourceRepository;
+import com.aprendia.backend.feature.curriculum.repository.ReactivoRepository;
 import com.aprendia.backend.feature.curriculum.repository.TopicRepository;
 import com.aprendia.backend.feature.curriculum.repository.UnitRepository;
 import com.aprendia.backend.feature.curriculum.service.CurriculumSupport;
@@ -29,6 +30,9 @@ public class UnitServiceImpl implements UnitService {
 
     @Autowired
     private LearningResourceRepository learningResourceRepository;
+
+    @Autowired
+    private ReactivoRepository reactivoRepository;
 
     @Autowired
     private CurriculumSupport support;
@@ -78,7 +82,7 @@ public class UnitServiceImpl implements UnitService {
         return mapToResponse(unitRepository.save(unit), countTopics(id));
     }
 
-    /** Baja lógica de la unidad y, en cascada, de sus temas y recursos. */
+    /** Baja lógica de la unidad y, en cascada, de sus temas, recursos y reactivos. */
     @Override
     @Transactional
     public void deleteUnit(Long id) {
@@ -86,6 +90,7 @@ public class UnitServiceImpl implements UnitService {
         LocalDateTime now = LocalDateTime.now();
         String username = CurrentUser.username();
         learningResourceRepository.softDelete(null, null, id, null, now, username);
+        reactivoRepository.softDelete(null, null, id, null, now, username);
         topicRepository.softDelete(null, id, null, now, username);
         unitRepository.softDelete(id, null, now, username);
     }

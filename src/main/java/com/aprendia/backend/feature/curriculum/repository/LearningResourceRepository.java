@@ -28,6 +28,9 @@ public interface LearningResourceRepository extends JpaRepository<LearningResour
             """)
     List<LearningResource> findByTopicId(@Param("topicId") Long topicId);
 
+    /** ¿Algún recurso (aunque esté dado de baja) usa el layout? La llave foránea impide borrarlo. */
+    boolean existsByLayoutId(Integer layoutId);
+
     /** totalRecursos por tema: [topicId, conteo]. */
     @Query("""
             select r.topic.id, count(r) from LearningResource r

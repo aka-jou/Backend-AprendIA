@@ -63,7 +63,7 @@ public class UnitController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize(MANAGE)
-    @Operation(summary = "Eliminar unidad", description = "Baja lógica de la unidad y de sus temas y recursos.")
+    @Operation(summary = "Eliminar unidad", description = "Baja lógica de la unidad y de sus temas, recursos y reactivos.")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         unitService.deleteUnit(id);
         return ResponseEntity.ok(ApiResponse.ok(null, "Unidad eliminada exitosamente."));

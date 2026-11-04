@@ -10,6 +10,7 @@ import com.aprendia.backend.feature.curriculum.dto.WorkbookRequestDTO;
 import com.aprendia.backend.feature.curriculum.dto.WorkbookResponseDTO;
 import com.aprendia.backend.feature.curriculum.entities.Workbook;
 import com.aprendia.backend.feature.curriculum.repository.LearningResourceRepository;
+import com.aprendia.backend.feature.curriculum.repository.ReactivoRepository;
 import com.aprendia.backend.feature.curriculum.repository.TopicRepository;
 import com.aprendia.backend.feature.curriculum.repository.UnitRepository;
 import com.aprendia.backend.feature.curriculum.repository.WorkbookRepository;
@@ -37,6 +38,9 @@ public class WorkbookServiceImpl implements WorkbookService {
 
     @Autowired
     private LearningResourceRepository learningResourceRepository;
+
+    @Autowired
+    private ReactivoRepository reactivoRepository;
 
     @Autowired
     private LearningPathRepository learningPathRepository;
@@ -94,7 +98,7 @@ public class WorkbookServiceImpl implements WorkbookService {
     }
 
     /**
-     * Baja lógica en cascada: el cuadernillo y todas sus unidades, temas y recursos reciben la misma
+     * Baja lógica en cascada: el cuadernillo y todas sus unidades, temas, recursos y reactivos reciben la misma
      * marca deleted_at. Nada se borra físicamente.
      */
     @Override
@@ -104,6 +108,7 @@ public class WorkbookServiceImpl implements WorkbookService {
         LocalDateTime now = LocalDateTime.now();
         String username = CurrentUser.username();
         learningResourceRepository.softDelete(null, null, null, id, now, username);
+        reactivoRepository.softDelete(null, null, null, id, now, username);
         topicRepository.softDelete(null, null, id, now, username);
         unitRepository.softDelete(null, id, now, username);
         workbookRepository.softDeleteById(id, now, username);

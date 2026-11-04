@@ -21,7 +21,7 @@ import java.util.List;
 @RequestMapping("/v1/topics")
 @Tag(name = "Temas curriculares", description = "Temas de una unidad (anexo curricular, sección 4). "
         + "GET por id, PUT y DELETE no están en la spec; se agregan por consistencia con /workbooks. "
-        + "totalReactivos vale 0 hasta que exista el módulo de reactivos.")
+        + "totalReactivos cuenta los reactivos visibles para el usuario.")
 public class TopicController {
 
     private static final String MANAGE = "hasAnyRole('ADMINISTRADOR', 'ASESOR_PEDAGOGICO')";
@@ -64,7 +64,7 @@ public class TopicController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize(MANAGE)
-    @Operation(summary = "Eliminar tema", description = "Baja lógica del tema y de sus recursos.")
+    @Operation(summary = "Eliminar tema", description = "Baja lógica del tema y de sus recursos y reactivos.")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         topicService.deleteTopic(id);
         return ResponseEntity.ok(ApiResponse.ok(null, "Tema eliminado exitosamente."));

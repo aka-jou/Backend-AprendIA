@@ -4,10 +4,12 @@ import com.aprendia.backend.common.security.RoleNames;
 import com.aprendia.backend.exception.BadRequestException;
 import com.aprendia.backend.exception.ResourceNotFoundException;
 import com.aprendia.backend.feature.curriculum.entities.LearningResource;
+import com.aprendia.backend.feature.curriculum.entities.Reactivo;
 import com.aprendia.backend.feature.curriculum.entities.Topic;
 import com.aprendia.backend.feature.curriculum.entities.Unit;
 import com.aprendia.backend.feature.curriculum.entities.Workbook;
 import com.aprendia.backend.feature.curriculum.repository.LearningResourceRepository;
+import com.aprendia.backend.feature.curriculum.repository.ReactivoRepository;
 import com.aprendia.backend.feature.curriculum.repository.TopicRepository;
 import com.aprendia.backend.feature.curriculum.repository.UnitRepository;
 import com.aprendia.backend.feature.curriculum.repository.WorkbookRepository;
@@ -32,15 +34,13 @@ import java.util.Set;
  * - Un registro con deleted_at no existe para la API (404).
  * - Quien no gestiona contenido (ni ADMINISTRADOR ni ASESOR_PEDAGOGICO) solo ve cuadernillos con
  *   status = true y lo que cuelga de ellos; un borrador responde 404 igual que uno inexistente.
+ * - Con los reactivos pasa lo mismo: sin permisos de gestión solo existen los de status = active.
  */
 @Component
 public class CurriculumSupport {
 
     /** Roles que pueden crear, editar y eliminar contenido curricular, y ver borradores. */
     public static final Set<String> MANAGER_AUTHORITIES = Set.of(RoleNames.ADMINISTRADOR, RoleNames.ASESOR_PEDAGOGICO);
-
-    /** Los listados del anexo no traen conteo de reactivos en la base: el módulo de reactivos no existe aún. */
-    public static final long PENDING_REACTIVOS_COUNT = 0L;
 
     @Autowired
     private WorkbookRepository workbookRepository;
@@ -53,6 +53,9 @@ public class CurriculumSupport {
 
     @Autowired
     private LearningResourceRepository learningResourceRepository;
+
+    @Autowired
+    private ReactivoRepository reactivoRepository;
 
     public boolean canManage() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -100,6 +103,24 @@ public class CurriculumSupport {
             throw new ResourceNotFoundException("Recurso didáctico no encontrado con ID: " + id);
         }
         return resource;
+    }
+
+    public Reactivo findVisibleReactivo(Long id) {
+        Reactivo reactivo = reactivoRepository.findActiveById(id)
+                .orElseThrow(() -> reactivoNotFound(id));
+        if (!canManage() && (!Boolean.TRUE.equals(reactivo.getTopic().getUnit().getWorkbook().getStatus())
+                || !Reactivo.STATUS_ACTIVE.equals(reactivo.getStatus()))) {
+            throw reactivoNotFound(id);
+        }
+        return reactivo;
+    }
+
+    /** totalReactivos por tema, con el mismo criterio de visibilidad que GET /reactivos. */
+    public Map<Long, Long> countReactivos(Collection<Long> topicIds) {
+        if (isEmpty(topicIds)) {
+            return Map.of();
+        }
+        return toCountMap(reactivoRepository.countByTopicIds(topicIds, canManage()));
     }
 
     // ---------- Referencias dentro del body -> 400 (mismo criterio que los catálogos) ----------
@@ -157,6 +178,10 @@ public class CurriculumSupport {
                 .replace("%", "!%")
                 .replace("_", "!_");
         return "%" + escaped + "%";
+    }
+
+    private static ResourceNotFoundException reactivoNotFound(Long id) {
+        return new ResourceNotFoundException("Reactivo no encontrado con ID: " + id);
     }
 
     private static ResourceNotFoundException workbookNotFound(Long id) {

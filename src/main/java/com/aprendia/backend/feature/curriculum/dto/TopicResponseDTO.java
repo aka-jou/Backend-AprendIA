@@ -3,8 +3,8 @@ package com.aprendia.backend.feature.curriculum.dto;
 import lombok.Builder;
 
 /**
- * Tema curricular. totalReactivos se devuelve siempre en 0: el módulo de reactivos no está
- * especificado todavía; el campo se mantiene para no romper el contrato con el frontend.
+ * Tema curricular. totalReactivos cuenta los reactivos vigentes del tema; sin permisos de gestión
+ * solo cuenta los de status = active (los mismos que devuelve GET /reactivos).
  */
 @Builder
 public record TopicResponseDTO(
