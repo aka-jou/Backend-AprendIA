@@ -27,7 +27,7 @@ public record StudentRequestDTO(
     @Positive(message = "profile debe ser un número positivo.")
     Long profile,
 
-    /** Docente asignado: id de un usuario activo con rol DOCENTE_AULA. Opcional; null deja al alumno sin docente. */
+    /** Docente asignado. En el alta (POST) lo fija el docente autenticado: si viene, debe ser su propio id. En PUT: id de un usuario activo con rol DOCENTE_AULA. */
     @Positive(message = "teacherId debe ser un número positivo.")
     Long teacherId,
 

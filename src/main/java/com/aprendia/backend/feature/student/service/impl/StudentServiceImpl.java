@@ -160,7 +160,7 @@ public class StudentServiceImpl implements StudentService {
         }
 
         Profile profile = resolveProfile(request.profile());
-        User teacher = resolveTeacher(request.teacherId());
+        User teacher = resolveRegisteringTeacher(request.teacherId());
         validateAddress(request.address());
         Role studentRole = roleRepository.findByName(RoleNames.STUDENT)
                 .orElseThrow(() -> new IllegalStateException("El rol " + RoleNames.STUDENT + " no está registrado en la base de datos."));
@@ -295,6 +295,25 @@ public class StudentServiceImpl implements StudentService {
             throw new BadRequestException("El perfil con ID " + profileId + " está inactivo.");
         }
         return profile;
+    }
+
+    /**
+     * El alta la hace un DOCENTE_AULA y el alumno queda asignado a él. teacherId es opcional: si viene,
+     * debe ser el del docente autenticado (un docente no registra alumnos a nombre de otro).
+     */
+    private User resolveRegisteringTeacher(Long requestedTeacherId) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) {
+            throw new AccessDeniedException("Sesión no autenticada.");
+        }
+        User teacher = userRepository.findByUsernameIgnoreCase(auth.getName())
+                .filter(this::isTeacher)
+                .orElseThrow(() -> new AccessDeniedException("Solo un usuario con rol DOCENTE_AULA puede registrar estudiantes."));
+        if (requestedTeacherId != null && !requestedTeacherId.equals(teacher.getId())) {
+            throw new BadRequestException("Un docente solo puede registrar alumnos a su nombre: teacherId debe ser "
+                    + teacher.getId() + " o ir vacío.");
+        }
+        return teacher;
     }
 
     /** teacherId opcional; si viene, debe ser un usuario activo con rol DOCENTE_AULA. */
