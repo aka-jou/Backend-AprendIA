@@ -41,9 +41,11 @@ public class StudentController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PreAuthorize("hasRole('DOCENTE_AULA')")
     @ApiMessage("Estudiante registrado exitosamente.")
-    @Operation(summary = "Crear expediente completo del alumno", description = "Persona, domicilio, familiares, perfil pedagógico y correo de acceso a la app móvil.")
+    @Operation(summary = "Crear expediente completo del alumno",
+            description = "Solo DOCENTE_AULA. Persona, domicilio, familiares, perfil pedagógico y correo de acceso a la app móvil. "
+                    + "El alumno queda asignado al docente que lo registra: teacherId es opcional y, si viene, debe ser el del propio docente.")
     public ResponseEntity<StudentResponseDTO> createStudent(@Valid @RequestBody StudentRequestDTO request) {
         return new ResponseEntity<>(studentService.createStudent(request), HttpStatus.CREATED);
     }
