@@ -1,6 +1,7 @@
 package com.aprendia.backend.feature.catalogs.service.impl;
 
 import com.aprendia.backend.common.dto.PagedResponse;
+import com.aprendia.backend.exception.ConflictException;
 import com.aprendia.backend.exception.ResourceNotFoundException;
 import com.aprendia.backend.feature.catalogs.dto.MunicipalityRequestDTO;
 import com.aprendia.backend.feature.catalogs.dto.MunicipalityResponseDTO;
@@ -35,9 +36,9 @@ public class MunicipalityServiceImpl implements MunicipalityService {
                 .orElseThrow(() -> new ResourceNotFoundException("Estado no encontrado con ID: " + request.estadoId()));
 
         Municipality municipality = Municipality.builder()
-                .name(request.nombre())
+                .name(request.nombre().trim())
                 .state(state)
-                .active(request.activo())
+                .active(request.activo() == null || request.activo())
                 .createdAt(LocalDateTime.now())
                 .createdBy(currentUsername())
                 .build();
@@ -47,41 +48,62 @@ public class MunicipalityServiceImpl implements MunicipalityService {
 
     @Override
     @Transactional(readOnly = true)
-    public PagedResponse<MunicipalityResponseDTO> getAllMunicipalities(Pageable pageable) {
-        Page<Municipality> page = municipalityRepository.findAll(pageable);
+    public PagedResponse<MunicipalityResponseDTO> getAllMunicipalities(Pageable pageable, boolean incluirInactivos) {
+        Page<Municipality> page = incluirInactivos
+                ? municipalityRepository.findAll(pageable)
+                : municipalityRepository.findByActiveTrue(pageable);
         return PagedResponse.fromPage(page.map(this::mapToResponse));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public PagedResponse<MunicipalityResponseDTO> getMunicipalitiesByStateId(Long stateId, Pageable pageable) {
-        Page<Municipality> page = municipalityRepository.findByStateId(stateId, pageable);
+    public PagedResponse<MunicipalityResponseDTO> getMunicipalitiesByStateId(Long stateId, Pageable pageable, boolean incluirInactivos) {
+        Page<Municipality> page = incluirInactivos
+                ? municipalityRepository.findByStateId(stateId, pageable)
+                : municipalityRepository.findByStateIdAndActiveTrue(stateId, pageable);
         return PagedResponse.fromPage(page.map(this::mapToResponse));
     }
 
     @Override
     @Transactional
     public MunicipalityResponseDTO updateMunicipality(Long id, MunicipalityRequestDTO request) {
-        Municipality municipality = municipalityRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Municipio no encontrado con ID: " + id));
+        Municipality municipality = findOrThrow(id);
 
         State state = stateRepository.findById(request.estadoId())
                 .orElseThrow(() -> new ResourceNotFoundException("Estado no encontrado con ID: " + request.estadoId()));
 
-        municipality.setName(request.nombre());
+        municipality.setName(request.nombre().trim());
         municipality.setState(state);
-        municipality.setActive(request.activo());
+        if (request.activo() != null) {
+            municipality.setActive(request.activo());
+        }
 
         return mapToResponse(municipalityRepository.save(municipality));
     }
 
     @Override
     @Transactional
+    public MunicipalityResponseDTO updateStatus(Long id, boolean activo) {
+        Municipality municipality = findOrThrow(id);
+        municipality.setActive(activo);
+        return mapToResponse(municipalityRepository.save(municipality));
+    }
+
+    /** Solo se borra un municipio que ningún domicilio usa; si está en uso se pide desactivarlo. */
+    @Override
+    @Transactional
     public void deleteMunicipality(Long id) {
-        if (!municipalityRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Municipio no encontrado con ID: " + id);
+        Municipality municipality = findOrThrow(id);
+        if (municipalityRepository.isInUse(id)) {
+            throw new ConflictException("No se puede eliminar el municipio porque hay domicilios registrados en él. "
+                    + "Desactívelo con PATCH /catalogs/municipalities/" + id + "/status.");
         }
-        municipalityRepository.deleteById(id);
+        municipalityRepository.delete(municipality);
+    }
+
+    private Municipality findOrThrow(Long id) {
+        return municipalityRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Municipio no encontrado con ID: " + id));
     }
 
     private String currentUsername() {

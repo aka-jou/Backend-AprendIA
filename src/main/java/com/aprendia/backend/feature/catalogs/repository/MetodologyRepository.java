@@ -9,4 +9,6 @@ import java.util.List;
 @Repository
 public interface MetodologyRepository extends JpaRepository<Metodology, Long> {
     List<Metodology> findAllByOrderByIdAsc();
+
+    List<Metodology> findByStatusTrueOrderByIdAsc();
 }

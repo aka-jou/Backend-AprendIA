@@ -1,5 +1,6 @@
 package com.aprendia.backend.feature.catalogs.controllers;
 
+import com.aprendia.backend.common.dto.StatusRequestDTO;
 import com.aprendia.backend.common.dto.ApiResponse;
 import com.aprendia.backend.common.response.ApiMessage;
 import io.swagger.v3.oas.annotations.Operation;
@@ -35,10 +36,12 @@ public class SkillController {
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     @ApiMessage("Habilidades obtenidas exitosamente.")
-    @Operation(summary = "Listar habilidades", description = "Ordenadas por ID. ?status=true devuelve solo las activas.")
+    @Operation(summary = "Listar habilidades", description = "Ordenadas por ID. Por defecto solo las activas; incluirInactivos=true devuelve todas. ?status=true|false filtra explícitamente y tiene prioridad.")
     public ResponseEntity<List<SkillResponseDTO>> getAll(
-            @Parameter(description = "true: activas; false: inactivas; sin valor: todas") @RequestParam(required = false) Boolean status) {
-        return ResponseEntity.ok(skillService.getSkills(status));
+            @Parameter(description = "true: activas; false: inactivas") @RequestParam(required = false) Boolean status,
+            @Parameter(description = "true: incluye las habilidades desactivadas") @RequestParam(defaultValue = "false") boolean incluirInactivos) {
+        Boolean filter = status != null ? status : (incluirInactivos ? null : Boolean.TRUE);
+        return ResponseEntity.ok(skillService.getSkills(filter));
     }
 
     @GetMapping("/{id}")
@@ -65,9 +68,17 @@ public class SkillController {
         return ResponseEntity.ok(skillService.updateSkill(id, request));
     }
 
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'ASESOR_PEDAGOGICO')")
+    @ApiMessage("Estatus de la habilidad actualizado exitosamente.")
+    @Operation(summary = "Activar o desactivar una habilidad", description = "Body: {\"activo\": boolean} (también acepta status o isActive). Baja lógica: el registro se conserva.")
+    public ResponseEntity<SkillResponseDTO> updateStatus(@PathVariable Long id, @Valid @RequestBody StatusRequestDTO request) {
+        return ResponseEntity.ok(skillService.updateStatus(id, request.activo()));
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMINISTRADOR')")
-    @Operation(summary = "Eliminar habilidad", description = "409 si la usan reactivos: en ese caso se desactiva con status=false.")
+    @Operation(summary = "Eliminar habilidad", description = "409 si la usan reactivos: en ese caso desactívela con PATCH .../status.")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         skillService.deleteSkill(id);
         return ResponseEntity.ok(ApiResponse.ok(null, "Habilidad eliminada exitosamente."));

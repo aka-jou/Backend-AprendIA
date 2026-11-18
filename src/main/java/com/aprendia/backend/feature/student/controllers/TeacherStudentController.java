@@ -35,12 +35,14 @@ public class TeacherStudentController {
     @Operation(summary = "Listado paginado de los alumnos de un docente",
             description = "ADMINISTRADOR consulta cualquier docente; DOCENTE_AULA solo su propio id (otro id responde 403). "
                     + "404 si el id no corresponde a un usuario con rol DOCENTE_AULA. "
-                    + "Parámetros: page (base 0), size (default 10), query (nombre, correo o CURP exacta).")
+                    + "Parámetros: page (base 0), size (default 10), query (nombre, correo o CURP exacta), incluirInactivos (por defecto false).")
     public ResponseEntity<PagedResponse<StudentResponseDTO>> getStudentsByTeacher(
             @PathVariable Long teacherId,
             @Parameter(description = "Texto de búsqueda: nombre, correo o CURP completa")
             @RequestParam(required = false) String query,
+            @Parameter(description = "true: incluye los alumnos dados de baja")
+            @RequestParam(defaultValue = "false") boolean incluirInactivos,
             @ParameterObject @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(studentService.getStudentsByTeacher(teacherId, query, pageable));
+        return ResponseEntity.ok(studentService.getStudentsByTeacher(teacherId, query, incluirInactivos, pageable));
     }
 }

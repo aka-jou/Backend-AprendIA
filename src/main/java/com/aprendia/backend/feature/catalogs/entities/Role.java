@@ -28,6 +28,11 @@ public class Role {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    /** false: rol desactivado (V29). No se puede asignar a usuarios nuevos; quien ya lo tiene lo conserva. */
+    @Builder.Default
+    @Column(nullable = false)
+    private Boolean status = Boolean.TRUE;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

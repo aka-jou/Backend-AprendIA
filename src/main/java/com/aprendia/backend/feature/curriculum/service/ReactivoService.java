@@ -10,5 +10,6 @@ public interface ReactivoService {
     ReactivoResponseDTO getReactivo(Long id);
     ReactivoResponseDTO createReactivo(ReactivoRequestDTO request);
     ReactivoResponseDTO updateReactivo(Long id, ReactivoRequestDTO request);
+    ReactivoResponseDTO updateStatus(Long id, String status);
     void deleteReactivo(Long id);
 }

@@ -1,6 +1,7 @@
 package com.aprendia.backend.feature.catalogs.service.impl;
 
 import com.aprendia.backend.common.dto.PagedResponse;
+import com.aprendia.backend.exception.ConflictException;
 import com.aprendia.backend.exception.ResourceNotFoundException;
 import com.aprendia.backend.feature.catalogs.dto.DependencyRequestDTO;
 import com.aprendia.backend.feature.catalogs.dto.DependencyResponseDTO;
@@ -27,8 +28,10 @@ public class DependencyServiceImpl implements DependencyService {
     @Transactional
     public DependencyResponseDTO createDependency(DependencyRequestDTO request) {
         Dependency dependency = Dependency.builder()
-                .name(request.nombre())
-                .internalCode(request.codigoInterno())
+                .name(request.nombre().trim())
+                .internalCode(request.codigoInterno().trim())
+                .type(blankToNull(request.tipo()))
+                .status(request.status() == null || request.status())
                 .createdAt(LocalDateTime.now())
                 .createdBy(currentUsername())
                 .build();
@@ -38,30 +41,55 @@ public class DependencyServiceImpl implements DependencyService {
 
     @Override
     @Transactional(readOnly = true)
-    public PagedResponse<DependencyResponseDTO> getAllDependencies(Pageable pageable) {
-        Page<Dependency> dependenciesPage = dependencyRepository.findAll(pageable);
+    public PagedResponse<DependencyResponseDTO> getAllDependencies(Pageable pageable, boolean incluirInactivos) {
+        Page<Dependency> dependenciesPage = incluirInactivos
+                ? dependencyRepository.findAll(pageable)
+                : dependencyRepository.findByStatusTrue(pageable);
         return PagedResponse.fromPage(dependenciesPage.map(this::mapToResponse));
     }
 
     @Override
     @Transactional
     public DependencyResponseDTO updateDependency(Long id, DependencyRequestDTO request) {
-        Dependency dependency = dependencyRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Dependencia no encontrada con ID: " + id));
+        Dependency dependency = findOrThrow(id);
 
-        dependency.setName(request.nombre());
-        dependency.setInternalCode(request.codigoInterno());
+        dependency.setName(request.nombre().trim());
+        dependency.setInternalCode(request.codigoInterno().trim());
+        dependency.setType(blankToNull(request.tipo()));
+        if (request.status() != null) {
+            dependency.setStatus(request.status());
+        }
 
         return mapToResponse(dependencyRepository.save(dependency));
     }
 
     @Override
     @Transactional
+    public DependencyResponseDTO updateStatus(Long id, boolean activo) {
+        Dependency dependency = findOrThrow(id);
+        dependency.setStatus(activo);
+        return mapToResponse(dependencyRepository.save(dependency));
+    }
+
+    /** Solo se borra una dependencia sin usuarios adscritos; si los tiene se pide desactivarla. */
+    @Override
+    @Transactional
     public void deleteDependency(Long id) {
-        if (!dependencyRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Dependencia no encontrada con ID: " + id);
+        Dependency dependency = findOrThrow(id);
+        if (dependencyRepository.hasUsers(id)) {
+            throw new ConflictException("No se puede eliminar la dependencia porque tiene usuarios adscritos. "
+                    + "Desactívela con PATCH /catalogs/dependencies/" + id + "/status.");
         }
-        dependencyRepository.deleteById(id);
+        dependencyRepository.delete(dependency);
+    }
+
+    private Dependency findOrThrow(Long id) {
+        return dependencyRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Dependencia no encontrada con ID: " + id));
+    }
+
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 
     private String currentUsername() {
@@ -73,7 +101,9 @@ public class DependencyServiceImpl implements DependencyService {
         return DependencyResponseDTO.builder()
                 .id(dependency.getId())
                 .nombre(dependency.getName())
+                .tipo(dependency.getType())
                 .codigoInterno(dependency.getInternalCode())
+                .status(dependency.getStatus())
                 .createdAt(dependency.getCreatedAt() != null ? dependency.getCreatedAt().toString() : null)
                 .createdBy(dependency.getCreatedBy())
                 .build();

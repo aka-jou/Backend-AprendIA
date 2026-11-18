@@ -40,4 +40,8 @@ public class LearningResource extends CurriculumAuditFields {
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb", nullable = false)
     private ResourceContent content;
+
+    /** false: desactivado (V29). Se conserva y se puede reactivar; quien no gestiona contenido no lo ve. */
+    @Column(nullable = false)
+    private Boolean status = Boolean.TRUE;
 }

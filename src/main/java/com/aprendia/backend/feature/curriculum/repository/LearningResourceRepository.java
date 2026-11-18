@@ -24,9 +24,10 @@ public interface LearningResourceRepository extends JpaRepository<LearningResour
     @Query("""
             select r from LearningResource r
             where r.topic.id = :topicId and r.deletedAt is null
+              and (:includeDisabled = true or r.status = true)
             order by r.id
             """)
-    List<LearningResource> findByTopicId(@Param("topicId") Long topicId);
+    List<LearningResource> findByTopicId(@Param("topicId") Long topicId, @Param("includeDisabled") boolean includeDisabled);
 
     /** ¿Algún recurso (aunque esté dado de baja) usa el layout? La llave foránea impide borrarlo. */
     boolean existsByLayoutId(Integer layoutId);
@@ -35,9 +36,11 @@ public interface LearningResourceRepository extends JpaRepository<LearningResour
     @Query("""
             select r.topic.id, count(r) from LearningResource r
             where r.topic.id in :topicIds and r.deletedAt is null
+              and (:includeDisabled = true or r.status = true)
             group by r.topic.id
             """)
-    List<Object[]> countByTopicIds(@Param("topicIds") Collection<Long> topicIds);
+    List<Object[]> countByTopicIds(@Param("topicIds") Collection<Long> topicIds,
+                                   @Param("includeDisabled") boolean includeDisabled);
 
     /**
      * Baja lógica de un recurso, o de los recursos de un tema, una unidad o un cuadernillo.

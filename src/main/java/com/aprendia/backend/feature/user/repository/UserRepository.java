@@ -26,16 +26,19 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByPersonId(Long personId);
     List<User> findByPersonIdIn(Collection<Long> personIds);
 
-    /** Personal del sistema: todos los usuarios que NO tienen el rol de estudiante. */
+    /** Personal del sistema: usuarios que NO tienen el rol de estudiante. includeInactive=false: solo activos. */
     @Query(value = """
             SELECT u FROM User u
             WHERE NOT EXISTS (SELECT r.id FROM User s JOIN s.roles r WHERE s.id = u.id AND r.name = :studentRole)
+              AND (:includeInactive = true OR u.isActive = true)
             """,
            countQuery = """
             SELECT COUNT(u) FROM User u
             WHERE NOT EXISTS (SELECT r.id FROM User s JOIN s.roles r WHERE s.id = u.id AND r.name = :studentRole)
+              AND (:includeInactive = true OR u.isActive = true)
             """)
-    Page<User> findStaff(@Param("studentRole") String studentRole, Pageable pageable);
+    Page<User> findStaff(@Param("studentRole") String studentRole, @Param("includeInactive") boolean includeInactive,
+                         Pageable pageable);
 
     /**
      * Búsqueda reactiva del personal (parámetro query): usuario, correo, nombre (por partes o completo)
@@ -45,6 +48,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query(value = """
             SELECT u FROM User u LEFT JOIN u.person p
             WHERE NOT EXISTS (SELECT r.id FROM User s JOIN s.roles r WHERE s.id = u.id AND r.name = :studentRole)
+              AND (:includeInactive = true OR u.isActive = true)
               AND (LOWER(u.username) LIKE :pattern
                 OR LOWER(u.email) LIKE :pattern
                 OR LOWER(p.firstName) LIKE :pattern
@@ -57,6 +61,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
            countQuery = """
             SELECT COUNT(u) FROM User u LEFT JOIN u.person p
             WHERE NOT EXISTS (SELECT r.id FROM User s JOIN s.roles r WHERE s.id = u.id AND r.name = :studentRole)
+              AND (:includeInactive = true OR u.isActive = true)
               AND (LOWER(u.username) LIKE :pattern
                 OR LOWER(u.email) LIKE :pattern
                 OR LOWER(p.firstName) LIKE :pattern
@@ -69,5 +74,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Page<User> searchStaff(@Param("studentRole") String studentRole,
                            @Param("pattern") String pattern,
                            @Param("curp") String curp,
+                           @Param("includeInactive") boolean includeInactive,
                            Pageable pageable);
 }

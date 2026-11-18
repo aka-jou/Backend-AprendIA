@@ -1,5 +1,7 @@
 package com.aprendia.backend.feature.catalogs.controllers;
 
+import io.swagger.v3.oas.annotations.Parameter;
+import com.aprendia.backend.common.dto.StatusRequestDTO;
 import com.aprendia.backend.common.dto.ApiResponse;
 import com.aprendia.backend.common.response.ApiMessage;
 import com.aprendia.backend.feature.catalogs.dto.MetodologyRequestDTO;
@@ -35,9 +37,10 @@ public class MetodologyController {
     @GetMapping
     @PreAuthorize("hasRole('ADMINISTRADOR')")
     @ApiMessage("Metodologías obtenidas exitosamente.")
-    @Operation(summary = "Listar Metodologías", description = "Lista completa (sin paginar), ordenada por ID, como la consume el frontend.")
-    public ResponseEntity<List<MetodologyResponseDTO>> getAll() {
-        return ResponseEntity.ok(metodologyService.getAllMetodologies());
+    @Operation(summary = "Listar Metodologías", description = "Lista completa (sin paginar), ordenada por ID. Solo activas; con incluirInactivos=true también las desactivadas.")
+    public ResponseEntity<List<MetodologyResponseDTO>> getAll(
+            @Parameter(description = "true: incluye las metodologías desactivadas") @RequestParam(defaultValue = "false") boolean incluirInactivos) {
+        return ResponseEntity.ok(metodologyService.getAllMetodologies(incluirInactivos));
     }
 
     @GetMapping("/{id}")
@@ -51,14 +54,22 @@ public class MetodologyController {
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMINISTRADOR')")
     @ApiMessage("Metodología actualizada exitosamente.")
-    @Operation(summary = "Actualizar Metodología")
+    @Operation(summary = "Actualizar Metodología", description = "Body: { nombre, sigla, autor, descripcion, urlImagen, status }. Los opcionales que se omiten se conservan.")
     public ResponseEntity<MetodologyResponseDTO> update(@PathVariable Long id, @Valid @RequestBody MetodologyRequestDTO request) {
         return ResponseEntity.ok(metodologyService.updateMetodology(id, request));
     }
 
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @ApiMessage("Estatus de la metodología actualizado exitosamente.")
+    @Operation(summary = "Activar o desactivar una metodología", description = "Body: {\"activo\": boolean} (también acepta status o isActive). Baja lógica: el registro se conserva.")
+    public ResponseEntity<MetodologyResponseDTO> updateStatus(@PathVariable Long id, @Valid @RequestBody StatusRequestDTO request) {
+        return ResponseEntity.ok(metodologyService.updateStatus(id, request.activo()));
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMINISTRADOR')")
-    @Operation(summary = "Eliminar Metodología", description = "Responde 409 si otros registros lo referencian; en ese caso use status=false.")
+    @Operation(summary = "Eliminar Metodología", description = "Responde 409 si tiene rutas de aprendizaje; en ese caso desactívela con PATCH .../status.")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         metodologyService.deleteMetodology(id);
         return ResponseEntity.ok(ApiResponse.ok(null, "Metodología eliminada exitosamente."));

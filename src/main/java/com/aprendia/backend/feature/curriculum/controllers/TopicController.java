@@ -1,5 +1,6 @@
 package com.aprendia.backend.feature.curriculum.controllers;
 
+import com.aprendia.backend.common.dto.StatusRequestDTO;
 import com.aprendia.backend.common.dto.ApiResponse;
 import com.aprendia.backend.common.response.ApiMessage;
 import com.aprendia.backend.feature.curriculum.dto.TopicRequestDTO;
@@ -32,10 +33,11 @@ public class TopicController {
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     @ApiMessage("Temas obtenidos exitosamente.")
-    @Operation(summary = "Listado de temas", description = "Ordenado por orden e ID. 404 si idUnidad no existe o no es visible.")
+    @Operation(summary = "Listado de temas", description = "Ordenado por orden e ID. 404 si idUnidad no existe o no es visible. Solo temas activos; incluirInactivos=true (gestores) incluye los desactivados.")
     public ResponseEntity<List<TopicResponseDTO>> getAll(
-            @Parameter(description = "Filtra por unidad") @RequestParam(required = false) Long idUnidad) {
-        return ResponseEntity.ok(topicService.getTopics(idUnidad));
+            @Parameter(description = "Filtra por unidad") @RequestParam(required = false) Long idUnidad,
+            @Parameter(description = "true: incluye los temas desactivados (solo ADMINISTRADOR y ASESOR_PEDAGOGICO)") @RequestParam(defaultValue = "false") boolean incluirInactivos) {
+        return ResponseEntity.ok(topicService.getTopics(idUnidad, incluirInactivos));
     }
 
     @GetMapping("/{id}")
@@ -60,6 +62,14 @@ public class TopicController {
     @Operation(summary = "Actualizar tema", description = "Permite moverlo a otra unidad cambiando idUnidad. Si se omite orden, se conserva.")
     public ResponseEntity<TopicResponseDTO> update(@PathVariable Long id, @Valid @RequestBody TopicRequestDTO request) {
         return ResponseEntity.ok(topicService.updateTopic(id, request));
+    }
+
+    @PatchMapping("/{id}/status")
+    @PreAuthorize(MANAGE)
+    @ApiMessage("Estatus del tema actualizado exitosamente.")
+    @Operation(summary = "Activar o desactivar tema", description = "Body: {\"activo\": boolean} (también acepta status o isActive). Baja lógica: el registro se conserva.")
+    public ResponseEntity<TopicResponseDTO> updateStatus(@PathVariable Long id, @Valid @RequestBody StatusRequestDTO request) {
+        return ResponseEntity.ok(topicService.updateStatus(id, request.activo()));
     }
 
     @DeleteMapping("/{id}")

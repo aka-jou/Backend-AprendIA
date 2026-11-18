@@ -10,6 +10,7 @@ public record UnitResponseDTO(
     String urlImagen,
     Integer orden,
     Long totalTemas,
+    Boolean status,
     String createdAt,
     String updatedAt
 ) {}

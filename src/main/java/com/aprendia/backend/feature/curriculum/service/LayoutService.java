@@ -10,5 +10,6 @@ public interface LayoutService {
     LayoutResponseDTO getLayout(Long id);
     LayoutResponseDTO createLayout(LayoutRequestDTO request);
     LayoutResponseDTO updateLayout(Long id, LayoutRequestDTO request);
+    LayoutResponseDTO updateStatus(Long id, boolean activo);
     void deleteLayout(Long id);
 }

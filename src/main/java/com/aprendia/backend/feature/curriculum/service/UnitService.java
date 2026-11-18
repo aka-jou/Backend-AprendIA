@@ -6,9 +6,10 @@ import com.aprendia.backend.feature.curriculum.dto.UnitResponseDTO;
 import java.util.List;
 
 public interface UnitService {
-    List<UnitResponseDTO> getUnits(Long idCuadernillo);
+    List<UnitResponseDTO> getUnits(Long idCuadernillo, boolean incluirInactivos);
     UnitResponseDTO getUnitById(Long id);
     UnitResponseDTO createUnit(UnitRequestDTO request);
     UnitResponseDTO updateUnit(Long id, UnitRequestDTO request);
+    UnitResponseDTO updateStatus(Long id, boolean activo);
     void deleteUnit(Long id);
 }

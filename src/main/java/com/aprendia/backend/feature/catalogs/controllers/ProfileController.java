@@ -1,5 +1,7 @@
 package com.aprendia.backend.feature.catalogs.controllers;
 
+import io.swagger.v3.oas.annotations.Parameter;
+import com.aprendia.backend.common.dto.StatusRequestDTO;
 import com.aprendia.backend.common.dto.ApiResponse;
 import com.aprendia.backend.common.response.ApiMessage;
 import com.aprendia.backend.feature.catalogs.dto.ProfileRequestDTO;
@@ -35,9 +37,10 @@ public class ProfileController {
     @GetMapping
     @PreAuthorize("hasRole('ADMINISTRADOR')")
     @ApiMessage("Perfiles obtenidos exitosamente.")
-    @Operation(summary = "Listar Perfiles", description = "Lista completa (sin paginar), ordenada por ID, como la consume el frontend.")
-    public ResponseEntity<List<ProfileResponseDTO>> getAll() {
-        return ResponseEntity.ok(profileService.getAllProfiles());
+    @Operation(summary = "Listar Perfiles", description = "Lista completa (sin paginar), ordenada por ID. Solo activos; con incluirInactivos=true también los desactivados.")
+    public ResponseEntity<List<ProfileResponseDTO>> getAll(
+            @Parameter(description = "true: incluye los perfiles desactivados") @RequestParam(defaultValue = "false") boolean incluirInactivos) {
+        return ResponseEntity.ok(profileService.getAllProfiles(incluirInactivos));
     }
 
     @GetMapping("/{id}")
@@ -56,9 +59,17 @@ public class ProfileController {
         return ResponseEntity.ok(profileService.updateProfile(id, request));
     }
 
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @ApiMessage("Estatus del perfil actualizado exitosamente.")
+    @Operation(summary = "Activar o desactivar un perfil", description = "Body: {\"activo\": boolean} (también acepta status o isActive). Baja lógica: el registro se conserva.")
+    public ResponseEntity<ProfileResponseDTO> updateStatus(@PathVariable Long id, @Valid @RequestBody StatusRequestDTO request) {
+        return ResponseEntity.ok(profileService.updateStatus(id, request.activo()));
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMINISTRADOR')")
-    @Operation(summary = "Eliminar Perfil", description = "Responde 409 si otros registros lo referencian; en ese caso use status=false.")
+    @Operation(summary = "Eliminar Perfil", description = "Responde 409 si tiene estudiantes o rutas; en ese caso desactívelo con PATCH .../status.")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         profileService.deleteProfile(id);
         return ResponseEntity.ok(ApiResponse.ok(null, "Perfil eliminado exitosamente."));

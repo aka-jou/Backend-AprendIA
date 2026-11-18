@@ -57,19 +57,25 @@ public class CurriculumTreeServiceImpl implements CurriculumTreeService {
                 .filter(path -> canManage || Boolean.TRUE.equals(path.getStatus()))
                 .orElseThrow(() -> new ResourceNotFoundException("Ruta de aprendizaje no encontrada con ID: " + learningPathId));
 
-        // Los borradores solo se incluyen si se piden explícitamente y el usuario gestiona contenido
-        List<Workbook> workbooks = workbookRepository.findForTree(learningPathId, includeInactive && canManage);
+        // Lo desactivado (cuadernillos borrador, unidades, temas y recursos con status = false) solo se
+        // incluye si se pide explícitamente y el usuario gestiona contenido
+        boolean showInactive = includeInactive && canManage;
+        List<Workbook> workbooks = workbookRepository.findForTree(learningPathId, showInactive);
 
         List<Unit> units = workbooks.isEmpty()
                 ? List.of()
-                : unitRepository.findByWorkbookIds(workbooks.stream().map(Workbook::getId).toList());
+                : unitRepository.findByWorkbookIds(workbooks.stream().map(Workbook::getId).toList()).stream()
+                        .filter(unit -> showInactive || Boolean.TRUE.equals(unit.getStatus()))
+                        .toList();
         List<Topic> topics = units.isEmpty()
                 ? List.of()
-                : topicRepository.findByUnitIds(units.stream().map(Unit::getId).toList());
+                : topicRepository.findByUnitIds(units.stream().map(Unit::getId).toList()).stream()
+                        .filter(topic -> showInactive || Boolean.TRUE.equals(topic.getStatus()))
+                        .toList();
         List<Long> topicIds = topics.stream().map(Topic::getId).toList();
         Map<Long, Long> resourceCounts = topics.isEmpty()
                 ? Map.of()
-                : CurriculumSupport.toCountMap(learningResourceRepository.countByTopicIds(topicIds));
+                : CurriculumSupport.toCountMap(learningResourceRepository.countByTopicIds(topicIds, showInactive));
         Map<Long, Long> reactivoCounts = support.countReactivos(topicIds);
 
         // Las consultas ya vienen ordenadas por (orden, id); groupingBy conserva ese orden dentro de cada grupo
@@ -112,6 +118,7 @@ public class CurriculumTreeServiceImpl implements CurriculumTreeService {
                 .nombre(unit.getName())
                 .urlImagen(unit.getImageUrl())
                 .orden(unit.getSortOrder())
+                .status(unit.getStatus())
                 .temas(topicsByUnit.getOrDefault(unit.getId(), List.of()).stream()
                         .map(topic -> TopicNode.builder()
                                 .idTema(topic.getId())
@@ -119,6 +126,7 @@ public class CurriculumTreeServiceImpl implements CurriculumTreeService {
                                 .descripcion(topic.getDescription())
                                 .urlImagen(topic.getImageUrl())
                                 .orden(topic.getSortOrder())
+                                .status(topic.getStatus())
                                 .totalRecursos(CurriculumSupport.countFor(resourceCounts, topic.getId()))
                                 .totalReactivos(CurriculumSupport.countFor(reactivoCounts, topic.getId()))
                                 .build())

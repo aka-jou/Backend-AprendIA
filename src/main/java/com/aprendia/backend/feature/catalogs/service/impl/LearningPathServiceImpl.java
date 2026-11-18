@@ -53,8 +53,19 @@ public class LearningPathServiceImpl implements LearningPathService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<LearningPathResponseDTO> getAllLearningPaths() {
-        return learningPathRepository.findAllByOrderByIdAsc().stream().map(this::mapToResponse).toList();
+    public List<LearningPathResponseDTO> getAllLearningPaths(boolean incluirInactivos) {
+        List<LearningPath> paths = incluirInactivos
+                ? learningPathRepository.findAllByOrderByIdAsc()
+                : learningPathRepository.findByStatusTrueOrderByIdAsc();
+        return paths.stream().map(this::mapToResponse).toList();
+    }
+
+    @Override
+    @Transactional
+    public LearningPathResponseDTO updateStatus(Long id, boolean activo) {
+        LearningPath learningPath = findOrThrow(id);
+        learningPath.setStatus(activo);
+        return mapToResponse(learningPathRepository.save(learningPath));
     }
 
     @Override

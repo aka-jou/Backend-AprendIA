@@ -28,6 +28,14 @@ public class Dependency {
     @Column(name = "internal_code", length = 50, nullable = false)
     private String internalCode;
 
+    @Column(length = 50)
+    private String type;
+
+    /** false: dependencia desactivada (V29). No se puede asignar a usuarios nuevos. */
+    @Builder.Default
+    @Column(nullable = false)
+    private Boolean status = Boolean.TRUE;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

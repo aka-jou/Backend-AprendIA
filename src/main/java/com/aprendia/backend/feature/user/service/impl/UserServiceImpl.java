@@ -16,6 +16,7 @@ import com.aprendia.backend.feature.user.dto.UserCreateRequestDTO;
 import com.aprendia.backend.feature.user.dto.UserCredentialsUpdateDTO;
 import com.aprendia.backend.feature.user.dto.UserDetailDTO;
 import com.aprendia.backend.feature.user.dto.UserPersonaDTO;
+import com.aprendia.backend.feature.user.dto.UserUpdatePersonaDTO;
 import com.aprendia.backend.feature.user.dto.UserSummaryDTO;
 import com.aprendia.backend.feature.user.dto.UserUpdateRequestDTO;
 import com.aprendia.backend.feature.user.entities.Person;
@@ -67,16 +68,17 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public PagedResponse<UserSummaryDTO> getUsers(String query, Pageable pageable) {
+    public PagedResponse<UserSummaryDTO> getUsers(String query, boolean incluirInactivos, Pageable pageable) {
         Page<User> page;
         if (StringUtils.hasText(query)) {
             String term = query.trim();
             page = userRepository.searchStaff(RoleNames.STUDENT,
                     "%" + term.toLowerCase(Locale.ROOT) + "%",
                     term.toUpperCase(Locale.ROOT),
+                    incluirInactivos,
                     pageable);
         } else {
-            page = userRepository.findStaff(RoleNames.STUDENT, pageable);
+            page = userRepository.findStaff(RoleNames.STUDENT, incluirInactivos, pageable);
         }
         return PagedResponse.fromPage(page.map(this::toSummary));
     }
@@ -107,8 +109,8 @@ public class UserServiceImpl implements UserService {
             throw new BadRequestException("La CURP proporcionada ya está registrada en el sistema.");
         }
 
-        Set<Role> roles = resolveRoles(request.assignment().roles());
-        Dependency dependency = resolveDependency(request.assignment().dependency());
+        Set<Role> roles = resolveRoles(request.assignment().roles(), Set.of());
+        Dependency dependency = resolveDependency(request.assignment().dependency(), null);
 
         Person person = new Person();
         applyPersona(person, persona, curp, request.assignment());
@@ -129,39 +131,62 @@ public class UserServiceImpl implements UserService {
 
     // ------------------------------------------------------------------ actualización
 
+    /**
+     * Actualización parcial: cada dato que no viene conserva su valor actual. Acepta el cuerpo del
+     * registro (persona, credentials, assignment, status) y el del directorio del frontend
+     * (email, roles, idDependencia/entidad, activo); ver {@link UserUpdateRequestDTO}.
+     */
     @Override
     @Transactional
     public UserDetailDTO updateUser(Long id, UserUpdateRequestDTO request) {
         User user = findStaffOrThrow(id);
         boolean isSelf = user.getUsername().equals(CurrentUser.username());
+        UserUpdatePersonaDTO persona = request.persona();
+        UserAssignmentDTO assignment = request.assignment();
 
-        UserPersonaDTO persona = request.persona();
-        String email = normalizeEmail(persona.email());
-        String curp = normalizeCurp(persona.curp());
-
-        userRepository.findByEmailIgnoreCase(email)
-                .filter(other -> !other.getId().equals(user.getId()))
-                .ifPresent(other -> { throw new BadRequestException("El correo electrónico ya está registrado."); });
-
-        Person person = user.getPerson() != null ? user.getPerson() : new Person();
-        personRepository.findByCurp(curp)
-                .filter(other -> person.getId() == null || !other.getId().equals(person.getId()))
-                .ifPresent(other -> { throw new BadRequestException("La CURP proporcionada ya está registrada en el sistema."); });
-
-        Set<Role> roles = resolveRoles(request.assignment().roles());
-        if (isSelf && roles.stream().noneMatch(r -> RoleNames.ADMINISTRADOR.equals(r.getName()))) {
-            throw new BadRequestException("No puede quitarse a sí mismo el rol ADMINISTRADOR.");
+        // ---- correo
+        String requestedEmail = firstNonBlank(request.email(), persona != null ? persona.email() : null);
+        if (requestedEmail != null) {
+            String email = normalizeEmail(requestedEmail);
+            userRepository.findByEmailIgnoreCase(email)
+                    .filter(other -> !other.getId().equals(user.getId()))
+                    .ifPresent(other -> { throw new BadRequestException("El correo electrónico ya está registrado."); });
+            user.setEmail(email);
         }
 
-        if (STATUS_INACTIVE.equals(request.status())) {
-            if (isSelf) {
-                throw new BadRequestException("No puede desactivar su propia cuenta.");
+        // ---- roles
+        List<String> requestedRoles = request.roles() != null ? request.roles()
+                : assignment != null ? assignment.roles() : null;
+        if (requestedRoles != null) {
+            Set<Role> roles = resolveRoles(requestedRoles, user.getRoles());
+            if (isSelf && roles.stream().noneMatch(r -> RoleNames.ADMINISTRADOR.equals(r.getName()))) {
+                throw new BadRequestException("No puede quitarse a sí mismo el rol ADMINISTRADOR.");
             }
-            user.setActive(false);
-        } else if (STATUS_ACTIVE.equals(request.status())) {
-            user.setActive(true);
+            user.setRoles(roles);
         }
 
+        // ---- dependencia: idDependencia, entidad (id o nombre) o assignment.dependency (nombre)
+        Dependency current = user.getDependency();
+        if (request.idDependencia() != null) {
+            user.setDependency(resolveDependencyById(request.idDependencia(), current));
+        } else if (StringUtils.hasText(request.entidad())) {
+            String entidad = request.entidad().trim();
+            user.setDependency(entidad.chars().allMatch(Character::isDigit)
+                    ? resolveDependencyById(Long.valueOf(entidad), current)
+                    : resolveDependency(entidad, current));
+        } else if (assignment != null && StringUtils.hasText(assignment.dependency())) {
+            user.setDependency(resolveDependency(assignment.dependency(), current));
+        }
+
+        // ---- estado: activo (booleano) o status ("Activo" / "Inactivo")
+        Boolean activo = request.activo() != null ? request.activo()
+                : STATUS_INACTIVE.equals(request.status()) ? Boolean.FALSE
+                : STATUS_ACTIVE.equals(request.status()) ? Boolean.TRUE : null;
+        if (activo != null) {
+            applyActive(user, activo, isSelf);
+        }
+
+        // ---- credenciales
         UserCredentialsUpdateDTO credentials = request.credentials();
         if (credentials != null) {
             String username = credentials.username().trim();
@@ -179,27 +204,51 @@ public class UserServiceImpl implements UserService {
             }
         }
 
-        applyPersona(person, persona, curp, request.assignment());
+        // ---- persona
+        Person person = user.getPerson() != null ? user.getPerson() : new Person();
+        if (persona != null) {
+            if (StringUtils.hasText(persona.curp())) {
+                String curp = normalizeCurp(persona.curp());
+                personRepository.findByCurp(curp)
+                        .filter(other -> person.getId() == null || !other.getId().equals(person.getId()))
+                        .ifPresent(other -> { throw new BadRequestException("La CURP proporcionada ya está registrada en el sistema."); });
+                person.setCurp(curp);
+            }
+            applyPersonaUpdate(person, persona);
+        }
+        if (assignment != null && assignment.photoUrl() != null) {
+            person.setImageUrl(blankToNull(assignment.photoUrl()));
+        }
+        requireCompletePerson(person);
         user.setPerson(personRepository.save(person));
-        user.setEmail(email);
-        user.setRoles(roles);
-        user.setDependency(resolveDependency(request.assignment().dependency()));
 
         return toDetail(userRepository.save(user));
     }
 
-    // ------------------------------------------------------------------ baja
+    // ------------------------------------------------------------------ estado y baja
+
+    @Override
+    @Transactional
+    public UserDetailDTO updateStatus(Long id, boolean activo) {
+        User user = findStaffOrThrow(id);
+        applyActive(user, activo, user.getUsername().equals(CurrentUser.username()));
+        return toDetail(userRepository.save(user));
+    }
 
     @Override
     @Transactional
     public void deactivateUser(Long id) {
         User user = findStaffOrThrow(id);
-        if (user.getUsername().equals(CurrentUser.username())) {
+        // Baja lógica: el registro se conserva para auditoría; sin is_active no puede autenticarse
+        applyActive(user, false, user.getUsername().equals(CurrentUser.username()));
+        userRepository.save(user);
+    }
+
+    private void applyActive(User user, boolean activo, boolean isSelf) {
+        if (!activo && isSelf) {
             throw new BadRequestException("No puede desactivar su propia cuenta.");
         }
-        // Baja lógica: el registro se conserva para auditoría; sin is_active no puede autenticarse
-        user.setActive(false);
-        userRepository.save(user);
+        user.setActive(activo);
     }
 
     // ------------------------------------------------------------------ apoyo
@@ -211,7 +260,11 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con ID: " + id));
     }
 
-    private Set<Role> resolveRoles(List<String> requested) {
+    /**
+     * Roles pedidos -> entidades. Un rol desactivado (catálogo de roles, status = false) no se puede
+     * asignar, salvo que el usuario ya lo tenga: así un PUT que reenvía sus roles actuales no falla.
+     */
+    private Set<Role> resolveRoles(List<String> requested, Set<Role> currentRoles) {
         Set<String> authorities = requested.stream()
                 .map(RoleNames::toAuthority)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
@@ -228,13 +281,38 @@ public class UserServiceImpl implements UserService {
         if (!unknown.isEmpty()) {
             throw new BadRequestException("Roles no registrados en el catálogo: " + String.join(", ", unknown) + ".");
         }
+        List<String> inactive = roles.stream()
+                .filter(r -> Boolean.FALSE.equals(r.getStatus()))
+                .filter(r -> currentRoles.stream().noneMatch(c -> c.getId().equals(r.getId())))
+                .map(r -> RoleNames.toApi(r.getName()))
+                .sorted()
+                .toList();
+        if (!inactive.isEmpty()) {
+            throw new BadRequestException("Roles desactivados en el catálogo: " + String.join(", ", inactive) + ".");
+        }
         return roles;
     }
 
-    private Dependency resolveDependency(String name) {
-        return dependencyRepository.findFirstByNameIgnoreCase(name.trim())
+    private Dependency resolveDependency(String name, Dependency current) {
+        Dependency dependency = dependencyRepository.findFirstByNameIgnoreCase(name.trim())
                 .orElseThrow(() -> new BadRequestException(
                         "La dependencia '" + name.trim() + "' no existe en el catálogo de dependencias."));
+        return requireActiveDependency(dependency, current);
+    }
+
+    private Dependency resolveDependencyById(Long id, Dependency current) {
+        Dependency dependency = dependencyRepository.findById(id)
+                .orElseThrow(() -> new BadRequestException("La dependencia con ID " + id + " no existe."));
+        return requireActiveDependency(dependency, current);
+    }
+
+    /** Una dependencia desactivada no se asigna, salvo que el usuario ya esté adscrito a ella. */
+    private Dependency requireActiveDependency(Dependency dependency, Dependency current) {
+        boolean isCurrent = current != null && current.getId().equals(dependency.getId());
+        if (Boolean.FALSE.equals(dependency.getStatus()) && !isCurrent) {
+            throw new BadRequestException("La dependencia '" + dependency.getName() + "' está desactivada.");
+        }
+        return dependency;
     }
 
     private void applyPersona(Person person, UserPersonaDTO persona, String curp, UserAssignmentDTO assignment) {
@@ -247,6 +325,44 @@ public class UserServiceImpl implements UserService {
         person.setGender(persona.gender().toUpperCase(Locale.ROOT));
         person.setPhone(PhoneNumbers.normalize(persona.phone()));
         person.setImageUrl(blankToNull(assignment.photoUrl()));
+    }
+
+    /** Solo cambia los datos que vienen; segundo nombre y segundo apellido vacíos se borran. */
+    private void applyPersonaUpdate(Person person, UserUpdatePersonaDTO persona) {
+        if (StringUtils.hasText(persona.firstName())) {
+            person.setFirstName(persona.firstName().trim());
+        }
+        if (persona.secondName() != null) {
+            person.setMiddleName(blankToNull(persona.secondName()));
+        }
+        if (StringUtils.hasText(persona.firstSurname())) {
+            person.setLastName(persona.firstSurname().trim());
+        }
+        if (persona.secondSurname() != null) {
+            person.setSecondLastName(blankToNull(persona.secondSurname()));
+        }
+        if (persona.birthDate() != null) {
+            person.setBirthDate(DateFormats.startOfDay(persona.birthDate()));
+        }
+        if (StringUtils.hasText(persona.gender())) {
+            person.setGender(persona.gender().trim().toUpperCase(Locale.ROOT));
+        }
+        if (StringUtils.hasText(persona.phone())) {
+            person.setPhone(PhoneNumbers.normalize(persona.phone()));
+        }
+    }
+
+    /** Un usuario sin persona previa (datos antiguos) debe quedar con los datos mínimos completos. */
+    private void requireCompletePerson(Person person) {
+        if (!StringUtils.hasText(person.getCurp()) || !StringUtils.hasText(person.getFirstName())
+                || person.getLastName() == null) {
+            throw new BadRequestException("El usuario no tiene datos personales registrados: envíe persona con curp, "
+                    + "primer nombre y primer apellido.");
+        }
+    }
+
+    private static String firstNonBlank(String first, String second) {
+        return StringUtils.hasText(first) ? first : StringUtils.hasText(second) ? second : null;
     }
 
     private UserSummaryDTO toSummary(User user) {

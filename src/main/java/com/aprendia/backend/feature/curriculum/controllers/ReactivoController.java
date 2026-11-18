@@ -2,6 +2,7 @@ package com.aprendia.backend.feature.curriculum.controllers;
 
 import com.aprendia.backend.common.dto.ApiResponse;
 import com.aprendia.backend.common.response.ApiMessage;
+import com.aprendia.backend.feature.curriculum.dto.ReactivoStatusRequestDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -69,6 +70,16 @@ public class ReactivoController {
             + "actualiza y conserva su ID; sin id se crea; los que no se envían se eliminan.")
     public ResponseEntity<ReactivoResponseDTO> update(@PathVariable Long idReactivo, @Valid @RequestBody ReactivoRequestDTO request) {
         return ResponseEntity.ok(reactivoService.updateReactivo(idReactivo, request));
+    }
+
+    @PatchMapping("/{idReactivo}/status")
+    @PreAuthorize(MANAGE)
+    @ApiMessage("Estado del reactivo actualizado exitosamente.")
+    @Operation(summary = "Cambiar el estado del reactivo", description = "Body: {\"status\": \"active\" | \"draft\" | \"inactive\"}. "
+            + "No exige reenviar habilidades ni ejercicios. Con status distinto de active, los alumnos dejan de verlo.")
+    public ResponseEntity<ReactivoResponseDTO> updateStatus(@PathVariable Long idReactivo,
+                                                            @Valid @RequestBody ReactivoStatusRequestDTO request) {
+        return ResponseEntity.ok(reactivoService.updateStatus(idReactivo, request.status()));
     }
 
     @DeleteMapping("/{idReactivo}")

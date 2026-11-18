@@ -1,5 +1,8 @@
 package com.aprendia.backend.feature.catalogs.controllers;
 
+import io.swagger.v3.oas.annotations.Parameter;
+import com.aprendia.backend.common.response.ApiMessage;
+import com.aprendia.backend.common.dto.StatusRequestDTO;
 import com.aprendia.backend.common.dto.ApiResponse;
 import com.aprendia.backend.common.dto.PagedResponse;
 import com.aprendia.backend.feature.catalogs.dto.MunicipalityRequestDTO;
@@ -33,18 +36,20 @@ public class MunicipalityController {
     }
 
     @GetMapping
-    @Operation(summary = "Obtener municipios", description = "Devuelve una lista paginada de todos los municipios.")
+    @Operation(summary = "Obtener municipios", description = "Lista paginada de municipios activos; con incluirInactivos=true también los desactivados.")
     public ResponseEntity<PagedResponse<MunicipalityResponseDTO>> getAllMunicipalities(
+            @Parameter(description = "true: incluye los municipios desactivados") @RequestParam(defaultValue = "false") boolean incluirInactivos,
             @ParameterObject @PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(municipalityService.getAllMunicipalities(pageable));
+        return ResponseEntity.ok(municipalityService.getAllMunicipalities(pageable, incluirInactivos));
     }
 
     @GetMapping("/by-state/{stateId}")
     @Operation(summary = "Obtener municipios por estado", description = "Devuelve una lista paginada de municipios pertenecientes a un estado específico.")
     public ResponseEntity<PagedResponse<MunicipalityResponseDTO>> getMunicipalitiesByStateId(
             @PathVariable Long stateId,
+            @Parameter(description = "true: incluye los municipios desactivados") @RequestParam(defaultValue = "false") boolean incluirInactivos,
             @ParameterObject @PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(municipalityService.getMunicipalitiesByStateId(stateId, pageable));
+        return ResponseEntity.ok(municipalityService.getMunicipalitiesByStateId(stateId, pageable, incluirInactivos));
     }
 
     @PutMapping("/{id}")
@@ -55,9 +60,17 @@ public class MunicipalityController {
         return ResponseEntity.ok(municipalityService.updateMunicipality(id, request));
     }
 
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @ApiMessage("Estatus del municipio actualizado exitosamente.")
+    @Operation(summary = "Activar o desactivar un municipio", description = "Body: {\"activo\": boolean} (también acepta status o isActive). Baja lógica: el registro se conserva.")
+    public ResponseEntity<MunicipalityResponseDTO> updateStatus(@PathVariable Long id, @Valid @RequestBody StatusRequestDTO request) {
+        return ResponseEntity.ok(municipalityService.updateStatus(id, request.activo()));
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMINISTRADOR')")
-    @Operation(summary = "Eliminar municipio", description = "Elimina físicamente un municipio del catálogo.")
+    @Operation(summary = "Eliminar municipio", description = "Elimina un municipio que ningún domicilio usa. Si está en uso responde 409: desactívelo con PATCH .../status.")
     public ResponseEntity<ApiResponse<Void>> deleteMunicipality(@PathVariable Long id) {
         municipalityService.deleteMunicipality(id);
         return ResponseEntity.ok(ApiResponse.ok(null, "Municipio eliminado exitosamente."));

@@ -29,6 +29,6 @@ public class ApiResponseWriter {
         response.setStatus(status.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-        objectMapper.writeValue(response.getWriter(), ApiResponse.error(message));
+        objectMapper.writeValue(response.getWriter(), ApiResponse.error(status.value(), message));
     }
 }

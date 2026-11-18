@@ -5,6 +5,7 @@ import com.aprendia.backend.common.security.RoleNames;
 import com.aprendia.backend.common.util.DateFormats;
 import com.aprendia.backend.common.util.PhoneNumbers;
 import com.aprendia.backend.exception.BadRequestException;
+import com.aprendia.backend.exception.ConflictException;
 import com.aprendia.backend.exception.ResourceNotFoundException;
 import com.aprendia.backend.feature.catalogs.entities.Profile;
 import com.aprendia.backend.feature.catalogs.entities.Role;
@@ -76,13 +77,14 @@ public class StudentServiceImpl implements StudentService {
 
     @Override
     @Transactional(readOnly = true)
-    public PagedResponse<StudentResponseDTO> getStudents(String query, Pageable pageable) {
+    public PagedResponse<StudentResponseDTO> getStudents(String query, boolean incluirInactivos, Pageable pageable) {
         Page<Student> page;
         if (StringUtils.hasText(query)) {
             String term = query.trim();
-            page = studentRepository.search("%" + term.toLowerCase(Locale.ROOT) + "%", term.toUpperCase(Locale.ROOT), pageable);
+            page = studentRepository.search("%" + term.toLowerCase(Locale.ROOT) + "%", term.toUpperCase(Locale.ROOT),
+                    incluirInactivos, pageable);
         } else {
-            page = studentRepository.findAll(pageable);
+            page = studentRepository.findFiltered(null, incluirInactivos, pageable);
         }
         return toPagedResponse(page);
     }
@@ -93,7 +95,8 @@ public class StudentServiceImpl implements StudentService {
      */
     @Override
     @Transactional(readOnly = true)
-    public PagedResponse<StudentResponseDTO> getStudentsByTeacher(Long teacherId, String query, Pageable pageable) {
+    public PagedResponse<StudentResponseDTO> getStudentsByTeacher(Long teacherId, String query, boolean incluirInactivos,
+                                                                  Pageable pageable) {
         User teacher = userRepository.findById(teacherId)
                 .filter(this::isTeacher)
                 .orElseThrow(() -> new ResourceNotFoundException("Docente no encontrado con ID: " + teacherId));
@@ -103,9 +106,9 @@ public class StudentServiceImpl implements StudentService {
         if (StringUtils.hasText(query)) {
             String term = query.trim();
             page = studentRepository.searchByTeacher(teacherId, "%" + term.toLowerCase(Locale.ROOT) + "%",
-                    term.toUpperCase(Locale.ROOT), pageable);
+                    term.toUpperCase(Locale.ROOT), incluirInactivos, pageable);
         } else {
-            page = studentRepository.findByTeacherId(teacherId, pageable);
+            page = studentRepository.findFiltered(teacherId, incluirInactivos, pageable);
         }
         return toPagedResponse(page);
     }
@@ -250,13 +253,31 @@ public class StudentServiceImpl implements StudentService {
                 }
                 account.setUsername(username);
             }
+            // activo (alias isActive) es opcional: si se omite, el estado no cambia
+            if (request.activo() != null) {
+                account.setActive(request.activo());
+            }
             userRepository.save(account);
         }
 
         return toResponse(student, account, profile.getName(), teacher != null ? displayName(teacher) : null);
     }
 
-    // ------------------------------------------------------------------ baja
+    // ------------------------------------------------------------------ estado y baja
+
+    /** El estado del alumno es el de su cuenta: desactivada no puede iniciar sesión (OTP, QR ni JWT vigentes). */
+    @Override
+    @Transactional
+    public StudentResponseDTO updateStatus(Long id, boolean activo) {
+        Student student = findOrThrow(id);
+        User account = findAccount(student);
+        if (account == null) {
+            throw new ConflictException("El estudiante no tiene cuenta de acceso; no se puede cambiar su estado.");
+        }
+        account.setActive(activo);
+        userRepository.save(account);
+        return toResponse(student, account, profileName(student), teacherName(student.getTeacherId()));
+    }
 
     @Override
     @Transactional

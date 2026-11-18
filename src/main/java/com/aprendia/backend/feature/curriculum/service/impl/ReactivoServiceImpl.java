@@ -148,6 +148,16 @@ public class ReactivoServiceImpl implements ReactivoService {
         return mapper.toResponse(reactivo);
     }
 
+    /** Cambia solo el estado (active, draft o inactive); habilidades y ejercicios no se tocan. */
+    @Override
+    @Transactional
+    public ReactivoResponseDTO updateStatus(Long id, String status) {
+        Reactivo reactivo = support.findVisibleReactivo(id);
+        reactivo.setStatus(status);
+        reactivo.markUpdated(CurrentUser.username(), LocalDateTime.now());
+        return mapper.toResponse(reactivoRepository.save(reactivo));
+    }
+
     /** Baja lógica del reactivo y de todos sus ejercicios. */
     @Override
     @Transactional

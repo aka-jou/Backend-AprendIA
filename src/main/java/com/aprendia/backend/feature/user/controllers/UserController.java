@@ -2,6 +2,7 @@ package com.aprendia.backend.feature.user.controllers;
 
 import com.aprendia.backend.common.dto.ApiResponse;
 import com.aprendia.backend.common.dto.PagedResponse;
+import com.aprendia.backend.common.dto.StatusRequestDTO;
 import com.aprendia.backend.common.response.ApiMessage;
 import com.aprendia.backend.feature.user.dto.UserCreateRequestDTO;
 import com.aprendia.backend.feature.user.dto.UserDetailDTO;
@@ -34,12 +35,15 @@ public class UserController {
     @PreAuthorize("hasRole('ADMINISTRADOR')")
     @ApiMessage("Usuarios recuperados exitosamente.")
     @Operation(summary = "Listado paginado de usuarios",
-            description = "Parámetros: page (base 0), size (default 10), query (busca en usuario, correo, nombre o CURP exacta). Excluye estudiantes.")
+            description = "Parámetros: page (base 0), size (default 10), query (busca en usuario, correo, nombre o CURP exacta), "
+                    + "incluirInactivos (por defecto false: solo usuarios activos). Excluye estudiantes.")
     public ResponseEntity<PagedResponse<UserSummaryDTO>> getUsers(
             @Parameter(description = "Texto de búsqueda: nombre, correo, usuario o CURP completa")
             @RequestParam(required = false) String query,
+            @Parameter(description = "true: incluye los usuarios desactivados para poder reactivarlos")
+            @RequestParam(defaultValue = "false") boolean incluirInactivos,
             @ParameterObject @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(userService.getUsers(query, pageable));
+        return ResponseEntity.ok(userService.getUsers(query, incluirInactivos, pageable));
     }
 
     @PostMapping
@@ -62,9 +66,20 @@ public class UserController {
     @PreAuthorize("hasRole('ADMINISTRADOR')")
     @ApiMessage("Usuario actualizado exitosamente.")
     @Operation(summary = "Actualizar datos personales, rol o estado",
-            description = "credentials es opcional; si password se omite, no cambia. status acepta 'Activo' o 'Inactivo'.")
+            description = "Actualización parcial: lo que no se envía se conserva. Acepta { persona: { primerNombre, segundoNombre, "
+                    + "primerApellido, segundoApellido, telefono, genero, fechaNacimiento }, email, roles[], idDependencia (o entidad), "
+                    + "activo } y también la forma del registro (persona, credentials, assignment, status 'Activo'/'Inactivo').")
     public ResponseEntity<UserDetailDTO> updateUser(@PathVariable Long id, @Valid @RequestBody UserUpdateRequestDTO request) {
         return ResponseEntity.ok(userService.updateUser(id, request));
+    }
+
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @ApiMessage("Estatus del usuario actualizado exitosamente.")
+    @Operation(summary = "Activar o desactivar usuario", description = "Body: {\"activo\": boolean}. Baja lógica: el usuario se conserva y "
+            + "sin is_active no puede iniciar sesión. Nadie puede desactivar su propia cuenta (400).")
+    public ResponseEntity<UserDetailDTO> updateStatus(@PathVariable Long id, @Valid @RequestBody StatusRequestDTO request) {
+        return ResponseEntity.ok(userService.updateStatus(id, request.activo()));
     }
 
     @DeleteMapping("/{id}")

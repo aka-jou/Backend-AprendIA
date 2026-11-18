@@ -143,6 +143,6 @@ public class GlobalExceptionHandler {
     }
 
     private ResponseEntity<ApiResponse<Void>> build(HttpStatus status, String message) {
-        return ResponseEntity.status(status).body(ApiResponse.error(message));
+        return ResponseEntity.status(status).body(ApiResponse.error(status.value(), message));
     }
 }

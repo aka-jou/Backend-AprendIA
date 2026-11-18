@@ -36,9 +36,10 @@ public class LearningResourceServiceImpl implements LearningResourceService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ResourceResponseDTO> getResourcesByTopic(Long idTema) {
+    public List<ResourceResponseDTO> getResourcesByTopic(Long idTema, boolean incluirInactivos) {
         support.findVisibleTopic(idTema);
-        return learningResourceRepository.findByTopicId(idTema).stream().map(this::mapToResponse).toList();
+        return learningResourceRepository.findByTopicId(idTema, support.canManage() && incluirInactivos).stream()
+                .map(this::mapToResponse).toList();
     }
 
     @Override
@@ -52,6 +53,7 @@ public class LearningResourceServiceImpl implements LearningResourceService {
     public ResourceResponseDTO createResource(ResourceRequestDTO request) {
         LearningResource resource = new LearningResource();
         apply(resource, request);
+        resource.setStatus(request.status() == null || request.status());
         resource.markCreated(CurrentUser.username(), LocalDateTime.now());
         return mapToResponse(learningResourceRepository.save(resource));
     }
@@ -61,6 +63,18 @@ public class LearningResourceServiceImpl implements LearningResourceService {
     public ResourceResponseDTO updateResource(Long id, ResourceRequestDTO request) {
         LearningResource resource = support.findVisibleResource(id);
         apply(resource, request);
+        if (request.status() != null) {
+            resource.setStatus(request.status());
+        }
+        resource.markUpdated(CurrentUser.username(), LocalDateTime.now());
+        return mapToResponse(learningResourceRepository.save(resource));
+    }
+
+    @Override
+    @Transactional
+    public ResourceResponseDTO updateStatus(Long id, boolean activo) {
+        LearningResource resource = support.findVisibleResource(id);
+        resource.setStatus(activo);
         resource.markUpdated(CurrentUser.username(), LocalDateTime.now());
         return mapToResponse(learningResourceRepository.save(resource));
     }
@@ -126,6 +140,7 @@ public class LearningResourceServiceImpl implements LearningResourceService {
                 .titulo(resource.getTitle())
                 .urlImagen(resource.getImageUrl())
                 .contenido(toDto(resource.getContent()))
+                .status(resource.getStatus())
                 .createdAt(DateFormats.isoInstant(resource.getCreatedAt()))
                 .updatedAt(DateFormats.isoInstant(resource.getUpdatedAt()))
                 .build();
