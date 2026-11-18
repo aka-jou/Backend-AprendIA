@@ -3,6 +3,7 @@ package com.aprendia.backend.feature.curriculum.dto;
 import com.aprendia.backend.common.validation.ValidationPatterns;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import lombok.Builder;
 
 /** Cuerpo de POST y PUT /resources (anexo curricular, sección 5.1). */
@@ -26,5 +27,9 @@ public record ResourceRequestDTO(
 
     @NotNull(message = "El contenido del recurso es obligatorio.")
     @Valid
-    ResourceContentDTO contenido
+    ResourceContentDTO contenido,
+
+    /** Opcional (alias "activo"). En POST vale true; en PUT, si se omite, se conserva. */
+    @JsonAlias("activo")
+    Boolean status
 ) {}

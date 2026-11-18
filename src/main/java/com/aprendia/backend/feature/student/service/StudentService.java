@@ -7,10 +7,11 @@ import org.springframework.data.domain.Pageable;
 
 /** Módulo 4 de la Especificación v2.0: expediente, domicilio, familiares y docente asignado del estudiante. */
 public interface StudentService {
-    PagedResponse<StudentResponseDTO> getStudents(String query, Pageable pageable);
-    PagedResponse<StudentResponseDTO> getStudentsByTeacher(Long teacherId, String query, Pageable pageable);
+    PagedResponse<StudentResponseDTO> getStudents(String query, boolean incluirInactivos, Pageable pageable);
+    PagedResponse<StudentResponseDTO> getStudentsByTeacher(Long teacherId, String query, boolean incluirInactivos, Pageable pageable);
     StudentResponseDTO getStudentById(Long id);
     StudentResponseDTO createStudent(StudentRequestDTO request);
     StudentResponseDTO updateStudent(Long id, StudentRequestDTO request);
+    StudentResponseDTO updateStatus(Long id, boolean activo);
     void deactivateStudent(Long id);
 }

@@ -1,6 +1,7 @@
 package com.aprendia.backend.feature.curriculum.controllers;
 
 import com.aprendia.backend.common.dto.ApiResponse;
+import com.aprendia.backend.common.dto.StatusRequestDTO;
 import com.aprendia.backend.common.response.ApiMessage;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -60,6 +61,14 @@ public class LayoutController {
     @Operation(summary = "Actualizar layout")
     public ResponseEntity<LayoutResponseDTO> update(@PathVariable Long idLayout, @Valid @RequestBody LayoutRequestDTO request) {
         return ResponseEntity.ok(layoutService.updateLayout(idLayout, request));
+    }
+
+    @PatchMapping("/{idLayout}/status")
+    @PreAuthorize(MANAGE)
+    @ApiMessage("Estatus del layout actualizado exitosamente.")
+    @Operation(summary = "Habilitar o deshabilitar layout", description = "Body: {\"isActive\": boolean} (también acepta activo o status).")
+    public ResponseEntity<LayoutResponseDTO> updateStatus(@PathVariable Long idLayout, @Valid @RequestBody StatusRequestDTO request) {
+        return ResponseEntity.ok(layoutService.updateStatus(idLayout, request.activo()));
     }
 
     @DeleteMapping("/{idLayout}")

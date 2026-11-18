@@ -1,5 +1,6 @@
 package com.aprendia.backend.feature.curriculum.controllers;
 
+import com.aprendia.backend.common.dto.StatusRequestDTO;
 import com.aprendia.backend.common.dto.ApiResponse;
 import com.aprendia.backend.common.response.ApiMessage;
 import com.aprendia.backend.feature.curriculum.dto.ResourceRequestDTO;
@@ -31,10 +32,11 @@ public class LearningResourceController {
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     @ApiMessage("Recursos didácticos obtenidos exitosamente.")
-    @Operation(summary = "Recursos de un tema", description = "idTema es obligatorio (400 si falta). Incluye el contenido completo de cada recurso.")
+    @Operation(summary = "Recursos de un tema", description = "idTema es obligatorio (400 si falta). Incluye el contenido completo de cada recurso. Solo recursos activos; incluirInactivos=true (gestores) incluye los desactivados.")
     public ResponseEntity<List<ResourceResponseDTO>> getByTopic(
-            @Parameter(description = "Tema del que se listan los recursos", required = true) @RequestParam Long idTema) {
-        return ResponseEntity.ok(learningResourceService.getResourcesByTopic(idTema));
+            @Parameter(description = "Tema del que se listan los recursos", required = true) @RequestParam Long idTema,
+            @Parameter(description = "true: incluye los recursos desactivados (solo ADMINISTRADOR y ASESOR_PEDAGOGICO)") @RequestParam(defaultValue = "false") boolean incluirInactivos) {
+        return ResponseEntity.ok(learningResourceService.getResourcesByTopic(idTema, incluirInactivos));
     }
 
     @GetMapping("/{id}")
@@ -60,6 +62,14 @@ public class LearningResourceController {
     @Operation(summary = "Actualizar recurso", description = "Reemplaza datos y contenido completo del recurso.")
     public ResponseEntity<ResourceResponseDTO> update(@PathVariable Long id, @Valid @RequestBody ResourceRequestDTO request) {
         return ResponseEntity.ok(learningResourceService.updateResource(id, request));
+    }
+
+    @PatchMapping("/{id}/status")
+    @PreAuthorize(MANAGE)
+    @ApiMessage("Estatus del recurso actualizado exitosamente.")
+    @Operation(summary = "Activar o desactivar recurso didáctico", description = "Body: {\"activo\": boolean} (también acepta status o isActive). Baja lógica: el registro se conserva.")
+    public ResponseEntity<ResourceResponseDTO> updateStatus(@PathVariable Long id, @Valid @RequestBody StatusRequestDTO request) {
+        return ResponseEntity.ok(learningResourceService.updateStatus(id, request.activo()));
     }
 
     @DeleteMapping("/{id}")

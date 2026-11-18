@@ -23,13 +23,13 @@ public interface ReactivoRepository extends JpaRepository<Reactivo, Long> {
 
     /**
      * GET /reactivos; topicId opcional. Sin permisos de gestión solo se ven reactivos con
-     * status = active de cuadernillos activos.
+     * status = active de cuadernillos, unidades y temas activos.
      */
     @Query("""
             select r from Reactivo r join fetch r.layout join fetch r.topic t join t.unit u join u.workbook w
             where r.deletedAt is null and t.deletedAt is null and u.deletedAt is null and w.deletedAt is null
               and (:topicId is null or t.id = :topicId)
-              and (:canManage = true or (w.status = true and r.status = 'active'))
+              and (:canManage = true or (w.status = true and u.status = true and t.status = true and r.status = 'active'))
             order by t.id, r.id
             """)
     List<Reactivo> search(@Param("topicId") Long topicId, @Param("canManage") boolean canManage);

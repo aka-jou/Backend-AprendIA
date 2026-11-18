@@ -32,35 +32,57 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
     @EntityGraph(attributePaths = {"person", "address"})
     @Query(value = """
             SELECT s FROM Student s JOIN s.person p
-            WHERE LOWER(p.firstName) LIKE :pattern
+            WHERE (:includeInactive = true OR NOT EXISTS (SELECT ia.id FROM User ia WHERE ia.person = s.person AND ia.isActive = false))
+              AND (LOWER(p.firstName) LIKE :pattern
                OR LOWER(p.middleName) LIKE :pattern
                OR LOWER(p.lastName) LIKE :pattern
                OR LOWER(p.secondLastName) LIKE :pattern
                OR LOWER(CONCAT(p.firstName, ' ', p.lastName)) LIKE :pattern
                OR p.curp = :curp
-               OR EXISTS (SELECT u.id FROM User u WHERE u.person = p AND LOWER(u.email) LIKE :pattern)
+               OR EXISTS (SELECT u.id FROM User u WHERE u.person = p AND LOWER(u.email) LIKE :pattern))
             """,
            countQuery = """
             SELECT COUNT(s) FROM Student s JOIN s.person p
-            WHERE LOWER(p.firstName) LIKE :pattern
+            WHERE (:includeInactive = true OR NOT EXISTS (SELECT ia.id FROM User ia WHERE ia.person = s.person AND ia.isActive = false))
+              AND (LOWER(p.firstName) LIKE :pattern
                OR LOWER(p.middleName) LIKE :pattern
                OR LOWER(p.lastName) LIKE :pattern
                OR LOWER(p.secondLastName) LIKE :pattern
                OR LOWER(CONCAT(p.firstName, ' ', p.lastName)) LIKE :pattern
                OR p.curp = :curp
-               OR EXISTS (SELECT u.id FROM User u WHERE u.person = p AND LOWER(u.email) LIKE :pattern)
+               OR EXISTS (SELECT u.id FROM User u WHERE u.person = p AND LOWER(u.email) LIKE :pattern))
             """)
-    Page<Student> search(@Param("pattern") String pattern, @Param("curp") String curp, Pageable pageable);
+    Page<Student> search(@Param("pattern") String pattern, @Param("curp") String curp,
+                         @Param("includeInactive") boolean includeInactive, Pageable pageable);
 
     /** Alumnos asignados a un docente (GET /v1/users/{teacherId}/students). */
     @EntityGraph(attributePaths = {"person", "address"})
     Page<Student> findByTeacherId(Long teacherId, Pageable pageable);
+
+    /**
+     * Listado sin texto de búsqueda. El estado del alumno es el de su cuenta (users.is_active): con
+     * includeInactive=false se excluyen los que tienen la cuenta desactivada.
+     */
+    @EntityGraph(attributePaths = {"person", "address"})
+    @Query(value = """
+            SELECT s FROM Student s
+            WHERE (:teacherId IS NULL OR s.teacherId = :teacherId)
+              AND (:includeInactive = true OR NOT EXISTS (SELECT ia.id FROM User ia WHERE ia.person = s.person AND ia.isActive = false))
+            """,
+           countQuery = """
+            SELECT COUNT(s) FROM Student s
+            WHERE (:teacherId IS NULL OR s.teacherId = :teacherId)
+              AND (:includeInactive = true OR NOT EXISTS (SELECT ia.id FROM User ia WHERE ia.person = s.person AND ia.isActive = false))
+            """)
+    Page<Student> findFiltered(@Param("teacherId") Long teacherId, @Param("includeInactive") boolean includeInactive,
+                               Pageable pageable);
 
     /** Igual que {@link #search} pero restringido a los alumnos de un docente. */
     @EntityGraph(attributePaths = {"person", "address"})
     @Query(value = """
             SELECT s FROM Student s JOIN s.person p
             WHERE s.teacherId = :teacherId
+              AND (:includeInactive = true OR NOT EXISTS (SELECT ia.id FROM User ia WHERE ia.person = s.person AND ia.isActive = false))
               AND (LOWER(p.firstName) LIKE :pattern
                OR LOWER(p.middleName) LIKE :pattern
                OR LOWER(p.lastName) LIKE :pattern
@@ -72,6 +94,7 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
            countQuery = """
             SELECT COUNT(s) FROM Student s JOIN s.person p
             WHERE s.teacherId = :teacherId
+              AND (:includeInactive = true OR NOT EXISTS (SELECT ia.id FROM User ia WHERE ia.person = s.person AND ia.isActive = false))
               AND (LOWER(p.firstName) LIKE :pattern
                OR LOWER(p.middleName) LIKE :pattern
                OR LOWER(p.lastName) LIKE :pattern
@@ -81,5 +104,6 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
                OR EXISTS (SELECT u.id FROM User u WHERE u.person = p AND LOWER(u.email) LIKE :pattern))
             """)
     Page<Student> searchByTeacher(@Param("teacherId") Long teacherId, @Param("pattern") String pattern,
-                                  @Param("curp") String curp, Pageable pageable);
+                                  @Param("curp") String curp, @Param("includeInactive") boolean includeInactive,
+                                  Pageable pageable);
 }

@@ -2,6 +2,7 @@ package com.aprendia.backend.feature.curriculum.dto;
 
 import com.aprendia.backend.common.validation.ValidationPatterns;
 import jakarta.validation.constraints.*;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import lombok.Builder;
 
 /** Cuerpo de POST y PUT /units (anexo curricular, sección 3.2). */
@@ -21,5 +22,9 @@ public record UnitRequestDTO(
     String urlImagen,
 
     @Min(value = 1, message = "El orden debe ser mayor o igual a 1.")
-    Integer orden
+    Integer orden,
+
+    /** Opcional (alias "activo"). En POST vale true; en PUT, si se omite, se conserva. */
+    @JsonAlias("activo")
+    Boolean status
 ) {}

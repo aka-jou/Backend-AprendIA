@@ -9,9 +9,10 @@ import org.springframework.data.domain.Pageable;
 
 /** Módulo 2 de la Especificación v2.0: personal docente, asesores, supervisores y administradores. */
 public interface UserService {
-    PagedResponse<UserSummaryDTO> getUsers(String query, Pageable pageable);
+    PagedResponse<UserSummaryDTO> getUsers(String query, boolean incluirInactivos, Pageable pageable);
     UserDetailDTO getUserById(Long id);
     UserDetailDTO createUser(UserCreateRequestDTO request);
     UserDetailDTO updateUser(Long id, UserUpdateRequestDTO request);
+    UserDetailDTO updateStatus(Long id, boolean activo);
     void deactivateUser(Long id);
 }

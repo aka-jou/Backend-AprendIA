@@ -61,13 +61,21 @@ public class SkillServiceImpl implements SkillService {
         return toResponse(skillRepository.saveAndFlush(skill));
     }
 
+    @Override
+    @Transactional
+    public SkillResponseDTO updateStatus(Long id, boolean activo) {
+        Skill skill = findOrThrow(id);
+        skill.setStatus(activo);
+        return toResponse(skillRepository.saveAndFlush(skill));
+    }
+
     /** Borrado físico si ningún reactivo la usa; si la usan se pide desactivarla. */
     @Override
     @Transactional
     public void deleteSkill(Long id) {
         Skill skill = findOrThrow(id);
         if (skillRepository.isUsedByReactivos(id)) {
-            throw new ConflictException("No se puede eliminar la habilidad porque la usan reactivos. Desactívela con status=false.");
+            throw new ConflictException("No se puede eliminar la habilidad porque la usan reactivos. Desactívela con PATCH /catalogs/skills/" + id + "/status.");
         }
         skillRepository.delete(skill);
     }

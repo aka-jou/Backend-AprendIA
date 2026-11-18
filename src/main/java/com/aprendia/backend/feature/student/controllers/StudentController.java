@@ -2,6 +2,7 @@ package com.aprendia.backend.feature.student.controllers;
 
 import com.aprendia.backend.common.dto.ApiResponse;
 import com.aprendia.backend.common.dto.PagedResponse;
+import com.aprendia.backend.common.dto.StatusRequestDTO;
 import com.aprendia.backend.common.response.ApiMessage;
 import com.aprendia.backend.feature.student.dto.StudentRequestDTO;
 import com.aprendia.backend.feature.student.dto.StudentResponseDTO;
@@ -32,12 +33,15 @@ public class StudentController {
     @PreAuthorize("hasRole('ADMINISTRADOR')")
     @ApiMessage("Estudiantes recuperados exitosamente.")
     @Operation(summary = "Listado paginado de estudiantes",
-            description = "Parámetros: page (base 0), size (default 10), query (busca en nombre, correo o CURP exacta).")
+            description = "Parámetros: page (base 0), size (default 10), query (busca en nombre, correo o CURP exacta), "
+                    + "incluirInactivos (por defecto false: solo alumnos con la cuenta activa).")
     public ResponseEntity<PagedResponse<StudentResponseDTO>> getStudents(
             @Parameter(description = "Texto de búsqueda: nombre, correo o CURP completa")
             @RequestParam(required = false) String query,
+            @Parameter(description = "true: incluye los alumnos dados de baja para poder reactivarlos")
+            @RequestParam(defaultValue = "false") boolean incluirInactivos,
             @ParameterObject @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(studentService.getStudents(query, pageable));
+        return ResponseEntity.ok(studentService.getStudents(query, incluirInactivos, pageable));
     }
 
     @PostMapping
@@ -59,9 +63,18 @@ public class StudentController {
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMINISTRADOR')")
     @ApiMessage("Estudiante actualizado exitosamente.")
-    @Operation(summary = "Actualizar datos del estudiante o familiares", description = "Reemplazo completo. En relatives[], un familiar con personId (o con una CURP ya registrada) se vincula sin duplicarse; los que no se envíen se desvinculan, sin borrar su persona.")
+    @Operation(summary = "Actualizar datos del estudiante o familiares", description = "Reemplazo completo. En relatives[], un familiar con personId (o con una CURP ya registrada) se vincula sin duplicarse; los que no se envíen se desvinculan, sin borrar su persona. activo (o isActive) es opcional: activa o desactiva la cuenta del alumno.")
     public ResponseEntity<StudentResponseDTO> updateStudent(@PathVariable Long id, @Valid @RequestBody StudentRequestDTO request) {
         return ResponseEntity.ok(studentService.updateStudent(id, request));
+    }
+
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @ApiMessage("Estatus del estudiante actualizado exitosamente.")
+    @Operation(summary = "Dar de baja o reactivar alumno", description = "Body: {\"activo\": boolean}. Baja lógica de la cuenta del alumno; "
+            + "el expediente se conserva.")
+    public ResponseEntity<StudentResponseDTO> updateStatus(@PathVariable Long id, @Valid @RequestBody StatusRequestDTO request) {
+        return ResponseEntity.ok(studentService.updateStatus(id, request.activo()));
     }
 
     @DeleteMapping("/{id}")

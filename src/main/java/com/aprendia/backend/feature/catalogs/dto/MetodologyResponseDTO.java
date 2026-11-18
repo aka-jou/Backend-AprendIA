@@ -6,6 +6,9 @@ import lombok.Builder;
 public record MetodologyResponseDTO(
     Long id,
     String nombre,
+    String sigla,
     String autor,
+    String descripcion,
+    String urlImagen,
     Boolean status
 ) {}

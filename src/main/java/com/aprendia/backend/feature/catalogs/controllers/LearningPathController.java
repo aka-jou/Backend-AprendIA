@@ -1,5 +1,7 @@
 package com.aprendia.backend.feature.catalogs.controllers;
 
+import io.swagger.v3.oas.annotations.Parameter;
+import com.aprendia.backend.common.dto.StatusRequestDTO;
 import com.aprendia.backend.common.dto.ApiResponse;
 import com.aprendia.backend.common.response.ApiMessage;
 import com.aprendia.backend.feature.catalogs.dto.LearningPathRequestDTO;
@@ -35,9 +37,10 @@ public class LearningPathController {
     @GetMapping
     @PreAuthorize("hasRole('ADMINISTRADOR')")
     @ApiMessage("Rutas de aprendizaje obtenidas exitosamente.")
-    @Operation(summary = "Listar Rutas de aprendizaje", description = "Lista completa (sin paginar), ordenada por ID, como la consume el frontend.")
-    public ResponseEntity<List<LearningPathResponseDTO>> getAll() {
-        return ResponseEntity.ok(learningPathService.getAllLearningPaths());
+    @Operation(summary = "Listar Rutas de aprendizaje", description = "Lista completa (sin paginar), ordenada por ID. Solo activas; con incluirInactivos=true también las desactivadas.")
+    public ResponseEntity<List<LearningPathResponseDTO>> getAll(
+            @Parameter(description = "true: incluye las rutas desactivadas") @RequestParam(defaultValue = "false") boolean incluirInactivos) {
+        return ResponseEntity.ok(learningPathService.getAllLearningPaths(incluirInactivos));
     }
 
     @GetMapping("/{id}")
@@ -54,6 +57,14 @@ public class LearningPathController {
     @Operation(summary = "Actualizar Ruta de aprendizaje")
     public ResponseEntity<LearningPathResponseDTO> update(@PathVariable Long id, @Valid @RequestBody LearningPathRequestDTO request) {
         return ResponseEntity.ok(learningPathService.updateLearningPath(id, request));
+    }
+
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @ApiMessage("Estatus de la ruta de aprendizaje actualizado exitosamente.")
+    @Operation(summary = "Activar o desactivar una ruta de aprendizaje", description = "Body: {\"activo\": boolean} (también acepta status o isActive). Baja lógica: el registro se conserva.")
+    public ResponseEntity<LearningPathResponseDTO> updateStatus(@PathVariable Long id, @Valid @RequestBody StatusRequestDTO request) {
+        return ResponseEntity.ok(learningPathService.updateStatus(id, request.activo()));
     }
 
     @DeleteMapping("/{id}")

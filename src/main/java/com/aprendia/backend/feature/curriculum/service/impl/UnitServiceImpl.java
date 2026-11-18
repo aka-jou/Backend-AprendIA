@@ -39,16 +39,17 @@ public class UnitServiceImpl implements UnitService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<UnitResponseDTO> getUnits(Long idCuadernillo) {
+    public List<UnitResponseDTO> getUnits(Long idCuadernillo, boolean incluirInactivos) {
         if (idCuadernillo != null) {
             support.findVisibleWorkbook(idCuadernillo);
         }
-        List<Unit> units = unitRepository.search(idCuadernillo, support.canManage());
+        boolean canManage = support.canManage();
+        List<Unit> units = unitRepository.search(idCuadernillo, canManage, canManage && incluirInactivos);
         if (units.isEmpty()) {
             return List.of();
         }
         Map<Long, Long> topicCounts = CurriculumSupport.toCountMap(
-                topicRepository.countByUnitIds(units.stream().map(Unit::getId).toList()));
+                topicRepository.countByUnitIds(units.stream().map(Unit::getId).toList(), canManage));
         return units.stream()
                 .map(unit -> mapToResponse(unit, CurriculumSupport.countFor(topicCounts, unit.getId())))
                 .toList();
@@ -66,6 +67,7 @@ public class UnitServiceImpl implements UnitService {
         Unit unit = new Unit();
         apply(unit, request);
         unit.setSortOrder(request.orden() != null ? request.orden() : 1);
+        unit.setStatus(request.status() == null || request.status());
         unit.markCreated(CurrentUser.username(), LocalDateTime.now());
         return mapToResponse(unitRepository.save(unit), 0L);
     }
@@ -78,6 +80,19 @@ public class UnitServiceImpl implements UnitService {
         if (request.orden() != null) {
             unit.setSortOrder(request.orden());
         }
+        if (request.status() != null) {
+            unit.setStatus(request.status());
+        }
+        unit.markUpdated(CurrentUser.username(), LocalDateTime.now());
+        return mapToResponse(unitRepository.save(unit), countTopics(id));
+    }
+
+    /** Desactivar no borra: la unidad y su contenido se conservan; quien no gestiona contenido deja de verlos. */
+    @Override
+    @Transactional
+    public UnitResponseDTO updateStatus(Long id, boolean activo) {
+        Unit unit = support.findVisibleUnit(id);
+        unit.setStatus(activo);
         unit.markUpdated(CurrentUser.username(), LocalDateTime.now());
         return mapToResponse(unitRepository.save(unit), countTopics(id));
     }
@@ -103,7 +118,7 @@ public class UnitServiceImpl implements UnitService {
 
     private long countTopics(Long unitId) {
         return CurriculumSupport.countFor(
-                CurriculumSupport.toCountMap(topicRepository.countByUnitIds(List.of(unitId))), unitId);
+                CurriculumSupport.toCountMap(topicRepository.countByUnitIds(List.of(unitId), support.canManage())), unitId);
     }
 
     private UnitResponseDTO mapToResponse(Unit unit, long totalTemas) {
@@ -114,6 +129,7 @@ public class UnitServiceImpl implements UnitService {
                 .urlImagen(unit.getImageUrl())
                 .orden(unit.getSortOrder())
                 .totalTemas(totalTemas)
+                .status(unit.getStatus())
                 .createdAt(DateFormats.isoInstant(unit.getCreatedAt()))
                 .updatedAt(DateFormats.isoInstant(unit.getUpdatedAt()))
                 .build();

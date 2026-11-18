@@ -1,6 +1,7 @@
 package com.aprendia.backend.feature.user.dto;
 
 import com.aprendia.backend.common.validation.ValidationPatterns;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -18,24 +19,30 @@ public record UserPersonaDTO(
     @Pattern(regexp = ValidationPatterns.CURP, message = "La CURP debe tener exactamente 18 caracteres con formato válido.")
     String curp,
 
+    @JsonAlias("primerNombre")
     @NotBlank(message = "El primer nombre es obligatorio.")
     @Size(max = 100, message = "El primer nombre no puede superar los 100 caracteres.")
     String firstName,
 
+    @JsonAlias("segundoNombre")
     @Size(max = 100, message = "El segundo nombre no puede superar los 100 caracteres.")
     String secondName,
 
+    @JsonAlias("primerApellido")
     @NotBlank(message = "El primer apellido es obligatorio.")
     @Size(max = 100, message = "El primer apellido no puede superar los 100 caracteres.")
     String firstSurname,
 
+    @JsonAlias("segundoApellido")
     @Size(max = 100, message = "El segundo apellido no puede superar los 100 caracteres.")
     String secondSurname,
 
+    @JsonAlias("fechaNacimiento")
     @NotNull(message = "La fecha de nacimiento es obligatoria (formato YYYY-MM-DD).")
     @Past(message = "La fecha de nacimiento debe ser una fecha pasada.")
     LocalDate birthDate,
 
+    @JsonAlias("genero")
     @NotBlank(message = "El género es obligatorio.")
     @Pattern(regexp = ValidationPatterns.GENDER_STAFF, message = "El género debe ser 'H' (Hombre), 'M' (Mujer) o 'X'.")
     String gender,
@@ -45,6 +52,7 @@ public record UserPersonaDTO(
     @Size(max = 100, message = "El correo no puede superar los 100 caracteres.")
     String email,
 
+    @JsonAlias("telefono")
     @NotBlank(message = "El teléfono es obligatorio.")
     @Pattern(regexp = ValidationPatterns.PHONE_10, message = "El teléfono debe tener 10 dígitos (se permiten espacios o guiones como separadores).")
     String phone

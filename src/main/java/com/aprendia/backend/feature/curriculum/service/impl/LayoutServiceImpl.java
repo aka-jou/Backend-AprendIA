@@ -71,6 +71,14 @@ public class LayoutServiceImpl implements LayoutService {
         return toResponse(layoutRepository.saveAndFlush(layout));
     }
 
+    @Override
+    @Transactional
+    public LayoutResponseDTO updateStatus(Long id, boolean activo) {
+        Layout layout = findOrThrow(id);
+        layout.setActive(activo);
+        return toResponse(layoutRepository.saveAndFlush(layout));
+    }
+
     /** Borrado físico si nadie lo usa; si lo usan recursos o reactivos se pide desactivarlo. */
     @Override
     @Transactional
@@ -78,7 +86,7 @@ public class LayoutServiceImpl implements LayoutService {
         Layout layout = findOrThrow(id);
         if (learningResourceRepository.existsByLayoutId(Math.toIntExact(id)) || reactivoRepository.existsByLayoutId(id)) {
             throw new ConflictException("No se puede eliminar el layout porque lo usan recursos o reactivos. "
-                    + "Desactívelo con isActive=false.");
+                    + "Desactívelo con PATCH /layouts/" + id + "/status.");
         }
         layoutRepository.delete(layout);
     }

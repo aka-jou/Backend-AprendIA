@@ -62,7 +62,7 @@ public class WorkbookServiceImpl implements WorkbookService {
             return List.of();
         }
         Map<Long, Long> unitCounts = CurriculumSupport.toCountMap(
-                unitRepository.countByWorkbookIds(workbooks.stream().map(Workbook::getId).toList()));
+                unitRepository.countByWorkbookIds(workbooks.stream().map(Workbook::getId).toList(), support.canManage()));
         return workbooks.stream()
                 .map(workbook -> mapToResponse(workbook, CurriculumSupport.countFor(unitCounts, workbook.getId())))
                 .toList();
@@ -131,7 +131,7 @@ public class WorkbookServiceImpl implements WorkbookService {
 
     private long countUnits(Long workbookId) {
         return CurriculumSupport.countFor(
-                CurriculumSupport.toCountMap(unitRepository.countByWorkbookIds(List.of(workbookId))), workbookId);
+                CurriculumSupport.toCountMap(unitRepository.countByWorkbookIds(List.of(workbookId), support.canManage())), workbookId);
     }
 
     private WorkbookResponseDTO mapToResponse(Workbook workbook, long totalUnidades) {

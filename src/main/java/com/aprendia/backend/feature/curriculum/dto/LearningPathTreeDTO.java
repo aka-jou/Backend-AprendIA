@@ -41,6 +41,7 @@ public record LearningPathTreeDTO(
         String nombre,
         String urlImagen,
         Integer orden,
+        Boolean status,
         List<TopicNode> temas
     ) {}
 
@@ -51,6 +52,7 @@ public record LearningPathTreeDTO(
         String descripcion,
         String urlImagen,
         Integer orden,
+        Boolean status,
         Long totalRecursos,
         Long totalReactivos
     ) {}

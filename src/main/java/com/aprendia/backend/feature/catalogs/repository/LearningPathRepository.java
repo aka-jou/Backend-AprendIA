@@ -16,6 +16,9 @@ public interface LearningPathRepository extends JpaRepository<LearningPath, Long
     @EntityGraph(attributePaths = {"metodology", "profile"})
     List<LearningPath> findAllByOrderByIdAsc();
 
+    @EntityGraph(attributePaths = {"metodology", "profile"})
+    List<LearningPath> findByStatusTrueOrderByIdAsc();
+
     @NonNull
     @EntityGraph(attributePaths = {"metodology", "profile"})
     Optional<LearningPath> findById(@NonNull Long id);

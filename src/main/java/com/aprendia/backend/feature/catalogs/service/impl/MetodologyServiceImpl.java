@@ -30,8 +30,11 @@ public class MetodologyServiceImpl implements MetodologyService {
     public MetodologyResponseDTO createMetodology(MetodologyRequestDTO request) {
         Metodology metodology = Metodology.builder()
                 .name(request.nombre().trim())
+                .acronym(blankToNull(request.sigla()))
                 .author(blankToNull(request.autor()))
-                .status(request.status())
+                .description(blankToNull(request.descripcion()))
+                .imageUrl(blankToNull(request.urlImagen()))
+                .status(request.status() == null || request.status())
                 .createdAt(LocalDateTime.now())
                 .createdBy(CurrentUser.username())
                 .build();
@@ -40,8 +43,11 @@ public class MetodologyServiceImpl implements MetodologyService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<MetodologyResponseDTO> getAllMetodologies() {
-        return metodologyRepository.findAllByOrderByIdAsc().stream().map(this::mapToResponse).toList();
+    public List<MetodologyResponseDTO> getAllMetodologies(boolean incluirInactivos) {
+        List<Metodology> metodologies = incluirInactivos
+                ? metodologyRepository.findAllByOrderByIdAsc()
+                : metodologyRepository.findByStatusTrueOrderByIdAsc();
+        return metodologies.stream().map(this::mapToResponse).toList();
     }
 
     @Override
@@ -56,7 +62,26 @@ public class MetodologyServiceImpl implements MetodologyService {
         Metodology metodology = findOrThrow(id);
         metodology.setName(request.nombre().trim());
         metodology.setAuthor(blankToNull(request.autor()));
-        metodology.setStatus(request.status());
+        if (request.sigla() != null) {
+            metodology.setAcronym(blankToNull(request.sigla()));
+        }
+        if (request.descripcion() != null) {
+            metodology.setDescription(blankToNull(request.descripcion()));
+        }
+        if (request.urlImagen() != null) {
+            metodology.setImageUrl(blankToNull(request.urlImagen()));
+        }
+        if (request.status() != null) {
+            metodology.setStatus(request.status());
+        }
+        return mapToResponse(metodologyRepository.save(metodology));
+    }
+
+    @Override
+    @Transactional
+    public MetodologyResponseDTO updateStatus(Long id, boolean activo) {
+        Metodology metodology = findOrThrow(id);
+        metodology.setStatus(activo);
         return mapToResponse(metodologyRepository.save(metodology));
     }
 
@@ -65,7 +90,7 @@ public class MetodologyServiceImpl implements MetodologyService {
     public void deleteMetodology(Long id) {
         findOrThrow(id);
         if (learningPathRepository.existsByMetodologyId(id)) {
-            throw new ConflictException("No se puede eliminar la metodología porque tiene rutas de aprendizaje asociadas. Desactívela con status=false.");
+            throw new ConflictException("No se puede eliminar la metodología porque tiene rutas de aprendizaje asociadas. Desactívela con PATCH /catalogs/metodologies/" + id + "/status.");
         }
         metodologyRepository.deleteById(id);
     }
@@ -83,7 +108,10 @@ public class MetodologyServiceImpl implements MetodologyService {
         return MetodologyResponseDTO.builder()
                 .id(metodology.getId())
                 .nombre(metodology.getName())
+                .sigla(metodology.getAcronym())
                 .autor(metodology.getAuthor())
+                .descripcion(metodology.getDescription())
+                .urlImagen(metodology.getImageUrl())
                 .status(metodology.getStatus())
                 .build();
     }

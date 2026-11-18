@@ -11,6 +11,7 @@ public record ResourceResponseDTO(
     String titulo,
     String urlImagen,
     ResourceContentDTO contenido,
+    Boolean status,
     String createdAt,
     String updatedAt
 ) {}

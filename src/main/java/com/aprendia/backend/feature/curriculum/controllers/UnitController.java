@@ -1,5 +1,6 @@
 package com.aprendia.backend.feature.curriculum.controllers;
 
+import com.aprendia.backend.common.dto.StatusRequestDTO;
 import com.aprendia.backend.common.dto.ApiResponse;
 import com.aprendia.backend.common.response.ApiMessage;
 import com.aprendia.backend.feature.curriculum.dto.UnitRequestDTO;
@@ -31,10 +32,11 @@ public class UnitController {
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     @ApiMessage("Unidades obtenidas exitosamente.")
-    @Operation(summary = "Listado de unidades", description = "Ordenado por orden e ID. 404 si idCuadernillo no existe o no es visible.")
+    @Operation(summary = "Listado de unidades", description = "Ordenado por orden e ID. 404 si idCuadernillo no existe o no es visible. Solo unidades activas; incluirInactivos=true (gestores) incluye las desactivadas.")
     public ResponseEntity<List<UnitResponseDTO>> getAll(
-            @Parameter(description = "Filtra por cuadernillo") @RequestParam(required = false) Long idCuadernillo) {
-        return ResponseEntity.ok(unitService.getUnits(idCuadernillo));
+            @Parameter(description = "Filtra por cuadernillo") @RequestParam(required = false) Long idCuadernillo,
+            @Parameter(description = "true: incluye las unidades desactivadas (solo ADMINISTRADOR y ASESOR_PEDAGOGICO)") @RequestParam(defaultValue = "false") boolean incluirInactivos) {
+        return ResponseEntity.ok(unitService.getUnits(idCuadernillo, incluirInactivos));
     }
 
     @GetMapping("/{id}")
@@ -59,6 +61,14 @@ public class UnitController {
     @Operation(summary = "Actualizar unidad", description = "Permite moverla a otro cuadernillo cambiando idCuadernillo. Si se omite orden, se conserva.")
     public ResponseEntity<UnitResponseDTO> update(@PathVariable Long id, @Valid @RequestBody UnitRequestDTO request) {
         return ResponseEntity.ok(unitService.updateUnit(id, request));
+    }
+
+    @PatchMapping("/{id}/status")
+    @PreAuthorize(MANAGE)
+    @ApiMessage("Estatus de la unidad actualizado exitosamente.")
+    @Operation(summary = "Activar o desactivar unidad", description = "Body: {\"activo\": boolean} (también acepta status o isActive). Baja lógica: el registro se conserva.")
+    public ResponseEntity<UnitResponseDTO> updateStatus(@PathVariable Long id, @Valid @RequestBody StatusRequestDTO request) {
+        return ResponseEntity.ok(unitService.updateStatus(id, request.activo()));
     }
 
     @DeleteMapping("/{id}")

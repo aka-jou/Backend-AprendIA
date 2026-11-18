@@ -1,6 +1,5 @@
 package com.aprendia.backend.feature.auth.service.impl;
 
-import com.aprendia.backend.common.security.RoleNames;
 import com.aprendia.backend.exception.TooManyRequestsException;
 import com.aprendia.backend.exception.UnauthorizedException;
 import com.aprendia.backend.feature.auth.dto.OtpSendResponseDTO;
@@ -11,7 +10,6 @@ import com.aprendia.backend.feature.auth.mail.OtpMailSender;
 import com.aprendia.backend.feature.auth.repository.OtpCodeRepository;
 import com.aprendia.backend.feature.auth.service.OtpService;
 import com.aprendia.backend.feature.auth.utils.JwtUtil;
-import com.aprendia.backend.feature.user.entities.Person;
 import com.aprendia.backend.feature.user.entities.User;
 import com.aprendia.backend.feature.user.repository.UserRepository;
 import io.jsonwebtoken.Claims;
@@ -27,7 +25,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Locale;
 
 /**
@@ -160,24 +157,7 @@ public class OtpServiceImpl implements OtpService {
     }
 
     private OtpUserInfoDTO buildUserInfo(User user) {
-        Person person = user.getPerson();
-        String nombre = user.getUsername();
-        if (person != null) {
-            nombre = String.join(" ",
-                    safe(person.getFirstName()), safe(person.getMiddleName()),
-                    safe(person.getLastName()), safe(person.getSecondLastName())).replaceAll("\\s+", " ").trim();
-        }
-
-        List<String> roles = user.getRoles().stream().map(role -> RoleNames.toApi(role.getName())).toList();
-
-        return OtpUserInfoDTO.builder()
-                .idUsuario(user.getId())
-                .nombre(nombre)
-                .username(user.getUsername())
-                .roles(roles)
-                // idEntidad = dependencia de adscripción del usuario (users.dependency_id)
-                .idEntidad(user.getDependency() != null ? user.getDependency().getId() : null)
-                .build();
+        return OtpUserInfoDTO.from(user);
     }
 
     private String generateCode() {
@@ -186,9 +166,5 @@ public class OtpServiceImpl implements OtpService {
 
     private String normalize(String email) {
         return email == null ? "" : email.trim().toLowerCase(Locale.ROOT);
-    }
-
-    private String safe(String value) {
-        return value == null ? "" : value;
     }
 }

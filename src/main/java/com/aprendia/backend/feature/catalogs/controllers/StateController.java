@@ -1,5 +1,8 @@
 package com.aprendia.backend.feature.catalogs.controllers;
 
+import io.swagger.v3.oas.annotations.Parameter;
+import com.aprendia.backend.common.response.ApiMessage;
+import com.aprendia.backend.common.dto.StatusRequestDTO;
 import com.aprendia.backend.common.dto.ApiResponse;
 import com.aprendia.backend.common.dto.PagedResponse;
 import com.aprendia.backend.feature.catalogs.dto.StateRequestDTO;
@@ -34,22 +37,31 @@ public class StateController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMINISTRADOR')")
-    @Operation(summary = "Obtener estados", description = "Devuelve la lista paginada de estados. Requiere rol ADMINISTRADOR.")
+    @Operation(summary = "Obtener estados", description = "Lista paginada de estados activos; con incluirInactivos=true también los desactivados. Requiere rol ADMINISTRADOR.")
     public ResponseEntity<PagedResponse<StateResponseDTO>> getAllStates(
+            @Parameter(description = "true: incluye los estados desactivados") @RequestParam(defaultValue = "false") boolean incluirInactivos,
             @PageableDefault(size = 10) Pageable pageable) {
-        return ResponseEntity.ok(stateService.getAllStates(pageable));
+        return ResponseEntity.ok(stateService.getAllStates(pageable, incluirInactivos));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMINISTRADOR')")
-    @Operation(summary = "Actualizar un estado", description = "Actualiza el nombre y/o indicador de habilitación de un estado existente. Requiere rol ADMINISTRADOR.")
+    @Operation(summary = "Actualizar un estado", description = "Body: { nombre (o name), activo }. activo es opcional: si se omite se conserva. Requiere rol ADMINISTRADOR.")
     public ResponseEntity<StateResponseDTO> updateState(@PathVariable Long id, @Valid @RequestBody StateRequestDTO request) {
         return ResponseEntity.ok(stateService.updateState(id, request));
     }
 
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @ApiMessage("Estatus del estado actualizado exitosamente.")
+    @Operation(summary = "Activar o desactivar un estado", description = "Body: {\"activo\": boolean} (también acepta status o isActive). Baja lógica: el registro se conserva.")
+    public ResponseEntity<StateResponseDTO> updateStatus(@PathVariable Long id, @Valid @RequestBody StatusRequestDTO request) {
+        return ResponseEntity.ok(stateService.updateStatus(id, request.activo()));
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMINISTRADOR')")
-    @Operation(summary = "Eliminar un estado", description = "Elimina de forma permanente un estado del sistema. Requiere rol ADMINISTRADOR.")
+    @Operation(summary = "Eliminar un estado", description = "Elimina un estado sin municipios ni domicilios. Si está en uso responde 409: desactívelo con PATCH .../status.")
     public ResponseEntity<ApiResponse<Void>> deleteState(@PathVariable Long id) {
         stateService.deleteState(id);
         return ResponseEntity.ok(ApiResponse.ok(null, "Estado eliminado exitosamente."));

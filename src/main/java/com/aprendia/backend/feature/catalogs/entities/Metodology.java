@@ -25,8 +25,18 @@ public class Metodology {
     @Column(length = 100, nullable = false)
     private String name;
 
+    /** "sigla" en la API. Columna de V5. */
+    @Column(length = 10)
+    private String acronym;
+
     @Column(length = 150)
     private String author;
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
+    @Column(name = "image_url", length = 1000)
+    private String imageUrl;
 
     @Builder.Default
     @Column(nullable = false)

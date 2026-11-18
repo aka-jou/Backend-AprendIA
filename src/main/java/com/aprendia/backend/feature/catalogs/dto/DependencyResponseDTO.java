@@ -6,7 +6,9 @@ import lombok.Builder;
 public record DependencyResponseDTO(
     Long id,
     String nombre,
+    String tipo,
     String codigoInterno,
+    Boolean status,
     String createdAt,
     String createdBy
 ) {}

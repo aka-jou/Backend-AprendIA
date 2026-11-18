@@ -32,8 +32,10 @@ import java.util.Set;
  *
  * Visibilidad:
  * - Un registro con deleted_at no existe para la API (404).
- * - Quien no gestiona contenido (ni ADMINISTRADOR ni ASESOR_PEDAGOGICO) solo ve cuadernillos con
- *   status = true y lo que cuelga de ellos; un borrador responde 404 igual que uno inexistente.
+ * - Quien no gestiona contenido (ni ADMINISTRADOR ni ASESOR_PEDAGOGICO) solo ve cuadernillos,
+ *   unidades, temas y recursos con status = true y lo que cuelga de ellos; uno desactivado responde
+ *   404 igual que uno inexistente. Los gestores los ven siempre por ID, y en los listados con
+ *   incluirInactivos=true.
  * - Con los reactivos pasa lo mismo: sin permisos de gestión solo existen los de status = active.
  */
 @Component
@@ -81,7 +83,7 @@ public class CurriculumSupport {
     public Unit findVisibleUnit(Long id) {
         Unit unit = unitRepository.findActiveById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Unidad no encontrada con ID: " + id));
-        if (!canManage() && !Boolean.TRUE.equals(unit.getWorkbook().getStatus())) {
+        if (!canManage() && !isVisible(unit)) {
             throw new ResourceNotFoundException("Unidad no encontrada con ID: " + id);
         }
         return unit;
@@ -90,7 +92,7 @@ public class CurriculumSupport {
     public Topic findVisibleTopic(Long id) {
         Topic topic = topicRepository.findActiveById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Tema no encontrado con ID: " + id));
-        if (!canManage() && !Boolean.TRUE.equals(topic.getUnit().getWorkbook().getStatus())) {
+        if (!canManage() && !isVisible(topic)) {
             throw new ResourceNotFoundException("Tema no encontrado con ID: " + id);
         }
         return topic;
@@ -99,7 +101,7 @@ public class CurriculumSupport {
     public LearningResource findVisibleResource(Long id) {
         LearningResource resource = learningResourceRepository.findActiveById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Recurso didáctico no encontrado con ID: " + id));
-        if (!canManage() && !Boolean.TRUE.equals(resource.getTopic().getUnit().getWorkbook().getStatus())) {
+        if (!canManage() && !(Boolean.TRUE.equals(resource.getStatus()) && isVisible(resource.getTopic()))) {
             throw new ResourceNotFoundException("Recurso didáctico no encontrado con ID: " + id);
         }
         return resource;
@@ -108,11 +110,20 @@ public class CurriculumSupport {
     public Reactivo findVisibleReactivo(Long id) {
         Reactivo reactivo = reactivoRepository.findActiveById(id)
                 .orElseThrow(() -> reactivoNotFound(id));
-        if (!canManage() && (!Boolean.TRUE.equals(reactivo.getTopic().getUnit().getWorkbook().getStatus())
-                || !Reactivo.STATUS_ACTIVE.equals(reactivo.getStatus()))) {
+        if (!canManage() && (!isVisible(reactivo.getTopic()) || !Reactivo.STATUS_ACTIVE.equals(reactivo.getStatus()))) {
             throw reactivoNotFound(id);
         }
         return reactivo;
+    }
+
+    /** Para quien no gestiona contenido: la unidad y su cuadernillo deben estar activos. */
+    private static boolean isVisible(Unit unit) {
+        return Boolean.TRUE.equals(unit.getStatus()) && Boolean.TRUE.equals(unit.getWorkbook().getStatus());
+    }
+
+    /** Para quien no gestiona contenido: el tema, su unidad y su cuadernillo deben estar activos. */
+    private static boolean isVisible(Topic topic) {
+        return Boolean.TRUE.equals(topic.getStatus()) && isVisible(topic.getUnit());
     }
 
     /** totalReactivos por tema, con el mismo criterio de visibilidad que GET /reactivos. */

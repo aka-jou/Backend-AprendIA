@@ -10,5 +10,6 @@ public interface SkillService {
     SkillResponseDTO getSkill(Long id);
     SkillResponseDTO createSkill(SkillRequestDTO request);
     SkillResponseDTO updateSkill(Long id, SkillRequestDTO request);
+    SkillResponseDTO updateStatus(Long id, boolean activo);
     void deleteSkill(Long id);
 }

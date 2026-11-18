@@ -29,4 +29,8 @@ public class Unit extends CurriculumAuditFields {
 
     @Column(name = "sort_order", nullable = false)
     private Integer sortOrder = 1;
+
+    /** false: desactivado (V29). Se conserva y se puede reactivar; quien no gestiona contenido no lo ve. */
+    @Column(nullable = false)
+    private Boolean status = Boolean.TRUE;
 }

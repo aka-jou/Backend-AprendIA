@@ -16,6 +16,7 @@ public record TopicResponseDTO(
     Integer orden,
     Long totalRecursos,
     Long totalReactivos,
+    Boolean status,
     String createdAt,
     String updatedAt
 ) {}

@@ -21,15 +21,20 @@ public interface TopicRepository extends JpaRepository<Topic, Long> {
             """)
     Optional<Topic> findActiveById(@Param("id") Long id);
 
-    /** Listado de GET /topics; unitId opcional. Sin permisos de gestión solo se ven cuadernillos activos. */
+    /**
+     * Listado de GET /topics; unitId opcional. includeInactive: incluye temas de cuadernillos borrador o
+     * de unidades desactivadas (solo gestores). includeDisabled: incluye temas desactivados.
+     */
     @Query("""
             select t from Topic t join t.unit u join u.workbook w
             where t.deletedAt is null and u.deletedAt is null and w.deletedAt is null
               and (:unitId is null or u.id = :unitId)
-              and (:includeInactive = true or w.status = true)
+              and (:includeInactive = true or (w.status = true and u.status = true))
+              and (:includeDisabled = true or t.status = true)
             order by u.id, t.sortOrder, t.id
             """)
-    List<Topic> search(@Param("unitId") Long unitId, @Param("includeInactive") boolean includeInactive);
+    List<Topic> search(@Param("unitId") Long unitId, @Param("includeInactive") boolean includeInactive,
+                       @Param("includeDisabled") boolean includeDisabled);
 
     @Query("""
             select t from Topic t
@@ -42,9 +47,11 @@ public interface TopicRepository extends JpaRepository<Topic, Long> {
     @Query("""
             select t.unit.id, count(t) from Topic t
             where t.unit.id in :unitIds and t.deletedAt is null
+              and (:includeDisabled = true or t.status = true)
             group by t.unit.id
             """)
-    List<Object[]> countByUnitIds(@Param("unitIds") Collection<Long> unitIds);
+    List<Object[]> countByUnitIds(@Param("unitIds") Collection<Long> unitIds,
+                                  @Param("includeDisabled") boolean includeDisabled);
 
     /**
      * Baja lógica de un tema, de los temas de una unidad o de los temas de un cuadernillo.

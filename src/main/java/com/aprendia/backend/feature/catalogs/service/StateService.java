@@ -7,7 +7,8 @@ import org.springframework.data.domain.Pageable;
 
 public interface StateService {
     StateResponseDTO createState(StateRequestDTO request);
-    PagedResponse<StateResponseDTO> getAllStates(Pageable pageable);
+    PagedResponse<StateResponseDTO> getAllStates(Pageable pageable, boolean incluirInactivos);
     StateResponseDTO updateState(Long id, StateRequestDTO request);
+    StateResponseDTO updateStatus(Long id, boolean activo);
     void deleteState(Long id);
 }

@@ -21,15 +21,20 @@ public interface UnitRepository extends JpaRepository<Unit, Long> {
             """)
     Optional<Unit> findActiveById(@Param("id") Long id);
 
-    /** Listado de GET /units; workbookId opcional. Sin permisos de gestión solo se ven cuadernillos activos. */
+    /**
+     * Listado de GET /units; workbookId opcional. includeInactive: incluye cuadernillos borrador (solo
+     * gestores). includeDisabled: incluye unidades desactivadas (gestores con incluirInactivos=true).
+     */
     @Query("""
             select u from Unit u join u.workbook w
             where u.deletedAt is null and w.deletedAt is null
               and (:workbookId is null or w.id = :workbookId)
               and (:includeInactive = true or w.status = true)
+              and (:includeDisabled = true or u.status = true)
             order by w.id, u.sortOrder, u.id
             """)
-    List<Unit> search(@Param("workbookId") Long workbookId, @Param("includeInactive") boolean includeInactive);
+    List<Unit> search(@Param("workbookId") Long workbookId, @Param("includeInactive") boolean includeInactive,
+                      @Param("includeDisabled") boolean includeDisabled);
 
     @Query("""
             select u from Unit u
@@ -42,9 +47,11 @@ public interface UnitRepository extends JpaRepository<Unit, Long> {
     @Query("""
             select u.workbook.id, count(u) from Unit u
             where u.workbook.id in :workbookIds and u.deletedAt is null
+              and (:includeDisabled = true or u.status = true)
             group by u.workbook.id
             """)
-    List<Object[]> countByWorkbookIds(@Param("workbookIds") Collection<Long> workbookIds);
+    List<Object[]> countByWorkbookIds(@Param("workbookIds") Collection<Long> workbookIds,
+                                      @Param("includeDisabled") boolean includeDisabled);
 
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""

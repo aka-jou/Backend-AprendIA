@@ -4,6 +4,7 @@ import com.aprendia.backend.exception.BadRequestException;
 import com.aprendia.backend.feature.auth.utils.JwtUtil;
 import com.aprendia.backend.feature.auth.dto.AuthResponse;
 import com.aprendia.backend.feature.auth.dto.AuthResponseDTO;
+import com.aprendia.backend.feature.auth.dto.OtpUserInfoDTO;
 import com.aprendia.backend.feature.auth.dto.StudentInfoDTO;
 import com.aprendia.backend.feature.auth.dto.StudentQrLoginDTO;
 import com.aprendia.backend.feature.auth.dto.UserLoginDTO;
@@ -53,8 +54,12 @@ public class AuthServiceImpl implements AuthService {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         String jwt = jwtUtil.generateToken(userDetails);
 
+        // idUsuario evita que el frontend tenga que buscar después al docente que inició sesión
+        User user = userRepository.findByUsername(userDetails.getUsername()).orElse(null);
         return AuthResponseDTO.builder()
                 .accessToken(jwt)
+                .idUsuario(user != null ? user.getId() : null)
+                .userInfo(user != null ? OtpUserInfoDTO.from(user) : null)
                 .build();
     }
 

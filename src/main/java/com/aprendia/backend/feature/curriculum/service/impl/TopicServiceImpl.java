@@ -35,16 +35,17 @@ public class TopicServiceImpl implements TopicService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<TopicResponseDTO> getTopics(Long idUnidad) {
+    public List<TopicResponseDTO> getTopics(Long idUnidad, boolean incluirInactivos) {
         if (idUnidad != null) {
             support.findVisibleUnit(idUnidad);
         }
-        List<Topic> topics = topicRepository.search(idUnidad, support.canManage());
+        boolean canManage = support.canManage();
+        List<Topic> topics = topicRepository.search(idUnidad, canManage, canManage && incluirInactivos);
         if (topics.isEmpty()) {
             return List.of();
         }
         List<Long> topicIds = topics.stream().map(Topic::getId).toList();
-        Map<Long, Long> resourceCounts = CurriculumSupport.toCountMap(learningResourceRepository.countByTopicIds(topicIds));
+        Map<Long, Long> resourceCounts = CurriculumSupport.toCountMap(learningResourceRepository.countByTopicIds(topicIds, canManage));
         Map<Long, Long> reactivoCounts = support.countReactivos(topicIds);
         return topics.stream()
                 .map(topic -> mapToResponse(topic, CurriculumSupport.countFor(resourceCounts, topic.getId()),
@@ -64,6 +65,7 @@ public class TopicServiceImpl implements TopicService {
         Topic topic = new Topic();
         apply(topic, request);
         topic.setSortOrder(request.orden() != null ? request.orden() : 1);
+        topic.setStatus(request.status() == null || request.status());
         topic.markCreated(CurrentUser.username(), LocalDateTime.now());
         return mapToResponse(topicRepository.save(topic), 0L, 0L);
     }
@@ -76,6 +78,19 @@ public class TopicServiceImpl implements TopicService {
         if (request.orden() != null) {
             topic.setSortOrder(request.orden());
         }
+        if (request.status() != null) {
+            topic.setStatus(request.status());
+        }
+        topic.markUpdated(CurrentUser.username(), LocalDateTime.now());
+        return mapToResponse(topicRepository.save(topic), countResources(id), countReactivos(id));
+    }
+
+    /** Desactivar no borra: el tema, sus recursos y reactivos se conservan; quien no gestiona contenido deja de verlos. */
+    @Override
+    @Transactional
+    public TopicResponseDTO updateStatus(Long id, boolean activo) {
+        Topic topic = support.findVisibleTopic(id);
+        topic.setStatus(activo);
         topic.markUpdated(CurrentUser.username(), LocalDateTime.now());
         return mapToResponse(topicRepository.save(topic), countResources(id), countReactivos(id));
     }
@@ -101,7 +116,7 @@ public class TopicServiceImpl implements TopicService {
 
     private long countResources(Long topicId) {
         return CurriculumSupport.countFor(
-                CurriculumSupport.toCountMap(learningResourceRepository.countByTopicIds(List.of(topicId))), topicId);
+                CurriculumSupport.toCountMap(learningResourceRepository.countByTopicIds(List.of(topicId), support.canManage())), topicId);
     }
 
     private long countReactivos(Long topicId) {
@@ -118,6 +133,7 @@ public class TopicServiceImpl implements TopicService {
                 .orden(topic.getSortOrder())
                 .totalRecursos(totalRecursos)
                 .totalReactivos(totalReactivos)
+                .status(topic.getStatus())
                 .createdAt(DateFormats.isoInstant(topic.getCreatedAt()))
                 .updatedAt(DateFormats.isoInstant(topic.getUpdatedAt()))
                 .build();

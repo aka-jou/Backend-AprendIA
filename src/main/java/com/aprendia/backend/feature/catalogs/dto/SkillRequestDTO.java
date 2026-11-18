@@ -1,5 +1,6 @@
 package com.aprendia.backend.feature.catalogs.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
@@ -16,5 +17,7 @@ public record SkillRequestDTO(
     @Positive(message = "idCategoria debe ser un número positivo.")
     Long idCategoria,
 
+    /** Alias "activo". */
+    @JsonAlias("activo")
     Boolean status
 ) {}

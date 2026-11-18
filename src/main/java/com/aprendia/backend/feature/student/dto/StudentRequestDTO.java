@@ -1,5 +1,6 @@
 package com.aprendia.backend.feature.student.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -34,5 +35,9 @@ public record StudentRequestDTO(
     @NotBlank(message = "El correo de acceso a la app móvil es obligatorio.")
     @Email(message = "El correo no tiene un formato válido.")
     @Size(max = 100, message = "El correo no puede superar los 100 caracteres.")
-    String email
+    String email,
+
+    /** Solo en PUT: activa o desactiva la cuenta del alumno (alias isActive). Si se omite, no cambia. */
+    @JsonAlias({"isActive", "status"})
+    Boolean activo
 ) {}

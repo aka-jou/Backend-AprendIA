@@ -7,8 +7,9 @@ import java.util.List;
 
 public interface LearningPathService {
     LearningPathResponseDTO createLearningPath(LearningPathRequestDTO request);
-    List<LearningPathResponseDTO> getAllLearningPaths();
+    List<LearningPathResponseDTO> getAllLearningPaths(boolean incluirInactivos);
     LearningPathResponseDTO getLearningPathById(Long id);
     LearningPathResponseDTO updateLearningPath(Long id, LearningPathRequestDTO request);
+    LearningPathResponseDTO updateStatus(Long id, boolean activo);
     void deleteLearningPath(Long id);
 }

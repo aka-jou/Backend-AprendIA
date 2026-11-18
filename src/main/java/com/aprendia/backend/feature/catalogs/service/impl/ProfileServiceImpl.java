@@ -35,7 +35,7 @@ public class ProfileServiceImpl implements ProfileService {
         Profile profile = Profile.builder()
                 .name(request.nombre().trim())
                 .description(blankToNull(request.descripcion()))
-                .status(request.status())
+                .status(request.status() == null || request.status())
                 .createdAt(LocalDateTime.now())
                 .createdBy(CurrentUser.username())
                 .build();
@@ -44,8 +44,11 @@ public class ProfileServiceImpl implements ProfileService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ProfileResponseDTO> getAllProfiles() {
-        return profileRepository.findAllByOrderByIdAsc().stream().map(this::mapToResponse).toList();
+    public List<ProfileResponseDTO> getAllProfiles(boolean incluirInactivos) {
+        List<Profile> profiles = incluirInactivos
+                ? profileRepository.findAllByOrderByIdAsc()
+                : profileRepository.findByStatusTrueOrderByIdAsc();
+        return profiles.stream().map(this::mapToResponse).toList();
     }
 
     @Override
@@ -60,7 +63,17 @@ public class ProfileServiceImpl implements ProfileService {
         Profile profile = findOrThrow(id);
         profile.setName(request.nombre().trim());
         profile.setDescription(blankToNull(request.descripcion()));
-        profile.setStatus(request.status());
+        if (request.status() != null) {
+            profile.setStatus(request.status());
+        }
+        return mapToResponse(profileRepository.save(profile));
+    }
+
+    @Override
+    @Transactional
+    public ProfileResponseDTO updateStatus(Long id, boolean activo) {
+        Profile profile = findOrThrow(id);
+        profile.setStatus(activo);
         return mapToResponse(profileRepository.save(profile));
     }
 
@@ -69,10 +82,10 @@ public class ProfileServiceImpl implements ProfileService {
     public void deleteProfile(Long id) {
         findOrThrow(id);
         if (studentRepository.existsByProfileId(Math.toIntExact(id))) {
-            throw new ConflictException("No se puede eliminar el perfil porque hay estudiantes asignados a él. Desactívelo con status=false.");
+            throw new ConflictException("No se puede eliminar el perfil porque hay estudiantes asignados a él. Desactívelo con PATCH /catalogs/profiles/" + id + "/status.");
         }
         if (learningPathRepository.existsByProfileId(id)) {
-            throw new ConflictException("No se puede eliminar el perfil porque hay rutas de aprendizaje dirigidas a él. Desactívelo con status=false.");
+            throw new ConflictException("No se puede eliminar el perfil porque hay rutas de aprendizaje dirigidas a él. Desactívelo con PATCH /catalogs/profiles/" + id + "/status.");
         }
         profileRepository.deleteById(id);
     }
