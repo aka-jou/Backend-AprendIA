@@ -270,6 +270,7 @@ public class StudentServiceImpl implements StudentService {
     @Transactional
     public StudentResponseDTO updateStatus(Long id, boolean activo) {
         Student student = findOrThrow(id);
+        assertCanManageStudent(student);
         User account = findAccount(student);
         if (account == null) {
             throw new ConflictException("El estudiante no tiene cuenta de acceso; no se puede cambiar su estado.");
@@ -283,6 +284,7 @@ public class StudentServiceImpl implements StudentService {
     @Transactional
     public void deactivateStudent(Long id) {
         Student student = findOrThrow(id);
+        assertCanManageStudent(student);
         User account = findAccount(student);
         // Baja lógica: el expediente se conserva; la cuenta deja de poder autenticarse (OTP, QR y JWT vigentes)
         if (account != null && account.isActive()) {
@@ -346,6 +348,22 @@ public class StudentServiceImpl implements StudentService {
         boolean isAdmin = auth.getAuthorities().stream().anyMatch(a -> RoleNames.ADMINISTRADOR.equals(a.getAuthority()));
         if (!isAdmin && !teacher.getUsername().equalsIgnoreCase(auth.getName())) {
             throw new AccessDeniedException("Un docente solo puede consultar sus propios alumnos.");
+        }
+    }
+
+    /** ADMINISTRADOR puede dar de baja a cualquier alumno; DOCENTE_AULA solo a los que tiene asignados. */
+    private void assertCanManageStudent(Student student) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) {
+            throw new AccessDeniedException("Sesión no autenticada.");
+        }
+        boolean isAdmin = auth.getAuthorities().stream().anyMatch(a -> RoleNames.ADMINISTRADOR.equals(a.getAuthority()));
+        if (isAdmin) {
+            return;
+        }
+        Long teacherId = userRepository.findByUsernameIgnoreCase(auth.getName()).map(User::getId).orElse(null);
+        if (teacherId == null || !teacherId.equals(student.getTeacherId())) {
+            throw new AccessDeniedException("Un docente solo puede dar de baja o reactivar a sus propios alumnos.");
         }
     }
 
