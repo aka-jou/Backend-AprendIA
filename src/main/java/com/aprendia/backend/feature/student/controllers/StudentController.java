@@ -71,17 +71,18 @@ public class StudentController {
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'DOCENTE_AULA')")
     @ApiMessage("Estatus del estudiante actualizado exitosamente.")
     @Operation(summary = "Dar de baja o reactivar alumno", description = "Body: {\"activo\": boolean}. Baja lógica de la cuenta del alumno; "
-            + "el expediente se conserva.")
+            + "el expediente se conserva. DOCENTE_AULA solo sobre sus propios alumnos (otro responde 403).")
     public ResponseEntity<StudentResponseDTO> updateStatus(@PathVariable Long id, @Valid @RequestBody StatusRequestDTO request) {
         return ResponseEntity.ok(studentService.updateStatus(id, request.activo()));
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
-    @Operation(summary = "Desactivar alumno", description = "Baja lógica de la cuenta del alumno; el expediente se conserva.")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'DOCENTE_AULA')")
+    @Operation(summary = "Desactivar alumno", description = "Baja lógica de la cuenta del alumno; el expediente se conserva. "
+            + "DOCENTE_AULA solo sobre sus propios alumnos (otro responde 403).")
     public ResponseEntity<ApiResponse<Void>> deactivateStudent(@PathVariable Long id) {
         studentService.deactivateStudent(id);
         return ResponseEntity.ok(ApiResponse.ok(null, "Estudiante desactivado exitosamente."));
