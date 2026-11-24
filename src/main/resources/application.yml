@@ -68,6 +68,15 @@ app:
       cron: ${API_KEY_ROTATION_CRON:-}
     cors:
       allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173,http://localhost:8080,http://localhost:4200}
+  logging:
+    # Carpeta de los archivos de log (relativa al directorio de trabajo; en Docker: /app/logs)
+    dir: ${LOG_DIR:logs}
+    # Días de archivos diarios que se conservan por tipo de log
+    max-history: ${LOG_MAX_HISTORY:90}
+    # Tope de espacio por tipo de log; al superarlo se borran los archivos más antiguos
+    total-size-cap: ${LOG_TOTAL_SIZE_CAP:1GB}
+    # Zona horaria de la fecha en el nombre del archivo (el @timestamp de cada entrada va en UTC, ISO 8601)
+    time-zone: ${LOG_TIME_ZONE:America/Mexico_City}
   encryption:
     # Obligatorio, sin valor por defecto. De él se deriva la llave de cifrado de los campos sensibles
     secret: ${ENCRYPTION_SECRET}
@@ -85,8 +94,12 @@ app:
     # SOLO desarrollo: escribe el código en el log en vez de enviar correo
     mock-delivery: ${OTP_MOCK_DELIVERY:false}
 
-# Logging configuration
+# Logging configuration (archivos, formato y retención: ver logback-spring.xml)
 logging:
+  structured:
+    ecs:
+      service:
+        environment: ${SPRING_PROFILES_ACTIVE:default}
   level:
     root: INFO
     com.aprendia.backend: ${LOGGING_LEVEL_APP:INFO}
@@ -104,7 +117,9 @@ management:
         include: health,info,metrics
   endpoint:
     health:
-      show-details: always
+      # Público solo muestra {"status":"UP"}; el detalle (BD, disco, SSL) únicamente con JWT de ADMINISTRADOR
+      show-details: when-authorized
+      roles: ADMINISTRADOR
 
 # Swagger / OpenAPI
 springdoc:

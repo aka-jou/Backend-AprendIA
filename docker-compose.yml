@@ -31,6 +31,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        # UID/GID del usuario del host dueño de ./logs (obtener con: id -u / id -g)
+        APP_UID: ${APP_UID:-1000}
+        APP_GID: ${APP_GID:-1000}
     restart: always
     # Solo loopback: Nginx (proxy_pass http://127.0.0.1:8080) es el único punto de entrada público.
     ports:
@@ -55,6 +59,12 @@ services:
 
       # Zona horaria de la JVM (marcas de tiempo de logs y auditoría)
       TZ: America/Mexico_City
+
+      # Archivos de log diarios por tipo (access, audit, error, warn, info), ver logback-spring.xml
+      LOG_DIR: /app/logs
+    # Los logs se escriben en ./logs del host (p. ej. /var/www/api-aprendia/logs) y sobreviven a la recreación del contenedor
+    volumes:
+      - ./logs:/app/logs
     depends_on:
       db-aprend-ia:
         condition: service_healthy

@@ -56,6 +56,10 @@ jobs:
             git reset --hard origin/main
             echo "Commit desplegado: $(git rev-parse --short HEAD)"
 
+            # Carpeta de logs montada en el contenedor; debe existir y pertenecer al usuario del despliegue
+            # (si Docker la crea, queda como root y la aplicación no puede escribir sus archivos).
+            mkdir -p logs
+
             # Reconstruye y reinicia solo la API; la base de datos sigue corriendo con su volumen.
             docker compose up -d --build aprendia-api
 

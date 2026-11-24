@@ -1,5 +1,6 @@
 package com.aprendia.backend.feature.auth.controllers;
 
+import com.aprendia.backend.common.logging.Auditable;
 import com.aprendia.backend.common.response.ApiMessage;
 import com.aprendia.backend.feature.auth.dto.OtpSendRequestDTO;
 import com.aprendia.backend.feature.auth.dto.OtpSendResponseDTO;
@@ -26,6 +27,7 @@ public class OtpAuthController {
     private OtpService otpService;
 
     @PostMapping("/send")
+    @Auditable(action = "OTP_SEND", resource = "auth", actor = "#request.email()")
     @ApiMessage("Código de seguridad enviado exitosamente al correo.")
     @Operation(summary = "Paso 1: enviar código OTP",
             description = "Envía un código de 6 dígitos al correo. Responde igual si el correo no existe.",
@@ -35,6 +37,7 @@ public class OtpAuthController {
     }
 
     @PostMapping("/verify")
+    @Auditable(action = "LOGIN_OTP_VERIFY", resource = "auth", actor = "#request.email()")
     @ApiMessage("Autenticación exitosa.")
     @Operation(summary = "Paso 2: verificar código OTP e iniciar sesión",
             description = "Valida el código y devuelve el token JWT con los datos del usuario.",

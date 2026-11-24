@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Configuración de logs de AprendIA.
+
+  Estándar:
+    - Niveles de severidad SLF4J/RFC 5424: ERROR, WARN, INFO, DEBUG.
+    - Formato de archivo: JSON por línea (NDJSON) con el esquema Elastic Common Schema (ECS 8.11),
+      generado por el StructuredLogEncoder de Spring Boot. Cada entrada incluye @timestamp ISO 8601 (UTC),
+      log.level, log.logger, message, service.name y los campos de contexto (http.request.id, client.ip,
+      user.name) que el AccessLogFilter y el JwtAuthenticationFilter colocan en el MDC.
+
+  Archivos (uno por día y por tipo; la fecha del nombre usa la zona horaria LOG_TZ):
+    logs/access/access-AAAA-MM-DD.log   Una línea por petición HTTP (logger ACCESS).
+    logs/audit/audit-AAAA-MM-DD.log     Acciones de negocio: altas, cambios, bajas, login (logger AUDIT).
+    logs/error/error-AAAA-MM-DD.log     Todo evento de nivel ERROR de la aplicación.
+    logs/warn/warn-AAAA-MM-DD.log       Todo evento de nivel WARN de la aplicación.
+    logs/info/info-AAAA-MM-DD.log       Todo evento de nivel INFO de la aplicación.
+
+  ACCESS y AUDIT no se propagan al logger raíz (additivity=false): solo se escriben en su propio archivo,
+  así cada archivo contiene un único tipo de log.
+-->
+<configuration>
+
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+
+    <springProperty scope="context" name="LOG_DIR" source="app.logging.dir" defaultValue="logs"/>
+    <springProperty scope="context" name="LOG_MAX_HISTORY" source="app.logging.max-history" defaultValue="90"/>
+    <springProperty scope="context" name="LOG_TOTAL_SIZE_CAP" source="app.logging.total-size-cap" defaultValue="1GB"/>
+    <springProperty scope="context" name="LOG_TZ" source="app.logging.time-zone" defaultValue="America/Mexico_City"/>
+
+    <!-- ===================== ACCESO ===================== -->
+    <appender name="FILE_ACCESS" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_DIR}/access/access-%d{yyyy-MM-dd,${LOG_TZ}}.log</fileNamePattern>
+            <maxHistory>${LOG_MAX_HISTORY}</maxHistory>
+            <totalSizeCap>${LOG_TOTAL_SIZE_CAP}</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder class="org.springframework.boot.logging.logback.StructuredLogEncoder">
+            <format>ecs</format>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- ===================== AUDITORÍA ===================== -->
+    <appender name="FILE_AUDIT" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_DIR}/audit/audit-%d{yyyy-MM-dd,${LOG_TZ}}.log</fileNamePattern>
+            <maxHistory>${LOG_MAX_HISTORY}</maxHistory>
+            <totalSizeCap>${LOG_TOTAL_SIZE_CAP}</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder class="org.springframework.boot.logging.logback.StructuredLogEncoder">
+            <format>ecs</format>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- ===================== ERROR ===================== -->
+    <appender name="FILE_ERROR" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_DIR}/error/error-%d{yyyy-MM-dd,${LOG_TZ}}.log</fileNamePattern>
+            <maxHistory>${LOG_MAX_HISTORY}</maxHistory>
+            <totalSizeCap>${LOG_TOTAL_SIZE_CAP}</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder class="org.springframework.boot.logging.logback.StructuredLogEncoder">
+            <format>ecs</format>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- ===================== WARN ===================== -->
+    <appender name="FILE_WARN" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>WARN</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_DIR}/warn/warn-%d{yyyy-MM-dd,${LOG_TZ}}.log</fileNamePattern>
+            <maxHistory>${LOG_MAX_HISTORY}</maxHistory>
+            <totalSizeCap>${LOG_TOTAL_SIZE_CAP}</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder class="org.springframework.boot.logging.logback.StructuredLogEncoder">
+            <format>ecs</format>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- ===================== INFO ===================== -->
+    <appender name="FILE_INFO" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>INFO</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_DIR}/info/info-%d{yyyy-MM-dd,${LOG_TZ}}.log</fileNamePattern>
+            <maxHistory>${LOG_MAX_HISTORY}</maxHistory>
+            <totalSizeCap>${LOG_TOTAL_SIZE_CAP}</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder class="org.springframework.boot.logging.logback.StructuredLogEncoder">
+            <format>ecs</format>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- Logger de acceso: una entrada por petición HTTP. Nivel fijo: no lo afecta logging.level.root. -->
+    <logger name="ACCESS" level="INFO" additivity="false">
+        <appender-ref ref="FILE_ACCESS"/>
+    </logger>
+
+    <!-- Logger de auditoría: también a consola para verlo con "docker compose logs". -->
+    <logger name="AUDIT" level="INFO" additivity="false">
+        <appender-ref ref="FILE_AUDIT"/>
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
+    <!-- Logger raíz: el nivel efectivo lo define logging.level.* en application.yml / application-prod.yml -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE_ERROR"/>
+        <appender-ref ref="FILE_WARN"/>
+        <appender-ref ref="FILE_INFO"/>
+    </root>
+
+</configuration>

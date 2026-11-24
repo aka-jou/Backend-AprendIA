@@ -22,11 +22,16 @@ RUN mvn clean package -DskipTests
 FROM eclipse-temurin:21-jre-alpine AS runtime
 WORKDIR /app
 
-# Crear un usuario y grupo de sistema "spring" no privilegiado para ejecutar la aplicación (Hardening)
-RUN addgroup -S spring && adduser -S spring -G spring
+# UID/GID del usuario de ejecución. En la VPS se pasan los del usuario dueño de la carpeta del proyecto
+# (APP_UID/APP_GID en .env) para que los archivos de ./logs montados desde el host le pertenezcan.
+ARG APP_UID=1000
+ARG APP_GID=1000
 
-# Crear un directorio temporal seguro y asignar permisos
-RUN mkdir -p /tmp/tomcat && chown -R spring:spring /tmp/tomcat
+# Crear un usuario y grupo "spring" no privilegiado para ejecutar la aplicación (Hardening)
+RUN addgroup -S -g ${APP_GID} spring && adduser -S -u ${APP_UID} -G spring spring
+
+# Directorio temporal y directorio de logs con permisos para el usuario de ejecución
+RUN mkdir -p /tmp/tomcat /app/logs && chown -R spring:spring /tmp/tomcat /app/logs
 
 # Copiar el archivo JAR compilado desde la etapa de construcción
 COPY --from=build /app/target/*.jar app.jar

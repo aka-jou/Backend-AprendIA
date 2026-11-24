@@ -1,5 +1,6 @@
 package com.aprendia.backend.feature.auth.controllers;
 
+import com.aprendia.backend.common.logging.Auditable;
 import com.aprendia.backend.feature.auth.dto.*;
 import com.aprendia.backend.feature.auth.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -25,6 +26,7 @@ public class AuthController {
     private AuthService authService;
 
     @PostMapping("/admin")
+    @Auditable(action = "LOGIN_PASSWORD", resource = "auth", actor = "#loginRequest.username()")
     @Operation(summary = "Iniciar sesión (admin/usuario)", deprecated = true, description = "OBSOLETO: usar /auth/otp/send y /auth/otp/verify. Autentica por usuario y contraseña y devuelve un token JWT.", security = { @SecurityRequirement(name = "ApiKeyAuth") })
     public ResponseEntity<AuthResponseDTO> loginAdmin(@Valid @RequestBody UserLoginDTO loginRequest) {
         AuthResponseDTO response = authService.login(loginRequest);
@@ -32,6 +34,7 @@ public class AuthController {
     }
 
     @PostMapping("/student")
+    @Auditable(action = "LOGIN_QR", resource = "auth")
     @Operation(summary = "Iniciar sesión (estudiante)", description = "Valida credenciales del estudiante mediante un código QR y devuelve un token JWT.", security = { @SecurityRequirement(name = "ApiKeyAuth") })
     public ResponseEntity<AuthResponseDTO> loginStudent(@Valid @RequestBody StudentQrLoginDTO studentQrLoginDTO) {
         AuthResponseDTO response = authService.loginStudent(studentQrLoginDTO);

@@ -1,6 +1,12 @@
 # Java
 *.class
 *.log
+
+# Archivos de log generados en ejecución (logback-spring.xml)
+logs/
+
+# Parches locales de trabajo (no se versionan)
+*.patch
 *.ctxt
 .mtj.tmp/
 *.jar

@@ -1,18 +1,22 @@
 package com.aprendia.backend.feature.auth.utils;
 
+import com.aprendia.backend.common.logging.LogFields;
 import com.aprendia.backend.feature.auth.service.impl.CustomUserDetailsService;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -54,9 +58,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                     SecurityContextHolder.getContext().setAuthentication(authentication);
+                    // Usuario en el MDC: lo incluyen los logs de acceso, auditoría y aplicación de esta petición.
+                    // AccessLogFilter lo retira al terminar la petición.
+                    MDC.put(LogFields.USER_NAME, username);
                     logger.debug("Usuario autenticado exitosamente vía JWT: {}", username);
                 }
             }
+        } catch (JwtException | IllegalArgumentException | UsernameNotFoundException ex) {
+            // Token vencido, alterado o de un usuario inexistente: situación esperada, sin traza de pila.
+            // La petición continúa sin autenticación y Spring Security responde 401.
+            logger.warn("Token JWT rechazado: {}", ex.getMessage());
         } catch (Exception ex) {
             logger.error("No se pudo establecer la autenticación del usuario en el contexto de seguridad", ex);
         }
