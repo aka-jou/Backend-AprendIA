@@ -1,0 +1,74 @@
+name: Build y despliegue a VPS
+
+# Cada push a main compila el proyecto y, si compila, lo despliega en la VPS.
+# workflow_dispatch permite relanzar el despliegue manualmente desde la pestaña Actions.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Evita dos despliegues simultáneos: si llega un push nuevo, el anterior en curso se cancela.
+concurrency:
+  group: deploy-vps
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Compilación (Maven)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: JDK 21 (Temurin) con caché de Maven
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      # Falla rápido en el runner si el código no compila, antes de tocar el servidor.
+      - name: Compilar y empaquetar
+        # Se usa el Maven del runner: mvnw está versionado sin permiso de ejecución (commit desde Windows).
+        run: mvn -B -ntp clean package -DskipTests
+
+  deploy:
+    name: Despliegue en VPS
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Desplegar vía SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          command_timeout: 20m
+          script: |
+            set -euo pipefail
+            cd /var/www/api-aprendia
+
+            # Sincroniza exactamente con origin/main. El .env y los archivos ignorados por git no se tocan.
+            git fetch --prune origin main
+            git checkout main
+            git reset --hard origin/main
+            echo "Commit desplegado: $(git rev-parse --short HEAD)"
+
+            # Reconstruye y reinicia solo la API; la base de datos sigue corriendo con su volumen.
+            docker compose up -d --build aprendia-api
+
+            # Health check: hasta 3 minutos esperando a que Spring Boot responda UP.
+            for i in $(seq 1 36); do
+              if curl -fsS http://127.0.0.1:8080/api/actuator/health | grep -q '"status":"UP"'; then
+                echo "API UP tras $((i * 5)) s"
+                docker image prune -f > /dev/null
+                exit 0
+              fi
+              sleep 5
+            done
+
+            echo "La API no respondió UP en 180 s. Últimas líneas del log:"
+            docker compose logs --tail=150 aprendia-api
+            exit 1
